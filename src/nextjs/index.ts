@@ -3,8 +3,7 @@
 // Export the NextGanttChart component
 export { NextGanttChart } from "./NextGanttChart";
 
-// Re-export main types and utilities
-// Using relative imports to ensure correct bundling
+// Re-export main types and utilities for Next.js users
 export * from "../types";
 export * from "../utils";
 export * from "../services";

@@ -6,57 +6,50 @@ A flexible, customizable Gantt chart component for React applications with drag-
 [![license](https://img.shields.io/npm/l/react-modern-gantt.svg)](https://github.com/MikaStiebitz/React-Modern-Gantt/blob/main/LICENSE)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/react-modern-gantt.svg)](https://bundlephobia.com/result?p=react-modern-gantt)
 
-![Dark](https://github.com/user-attachments/assets/110b971a-0386-42b8-a237-d7d1d6eae132)
+![Dark Mode Preview](https://github.com/user-attachments/assets/110b971a-0386-42b8-a237-d7d1d6eae132)
 
 <a href="https://react-gantt-demo.vercel.app/" target="_blank" rel="noopener noreferrer">LIVE DEMO</a>
 
-## 📊 Features
+## Features
 
 - 📊 **Interactive timeline** with drag-and-drop task scheduling
-- 🎨 **Fully customizable** with CSS variables, Tailwind CSS, or custom styling
-- 🧩 **Multiple view modes** (Minute, Hour, Day, Week, Month, Quarter, Year)
+- 🎨 **Fully customizable** with Tailwind CSS or custom styling
+- 🕒 **Multiple view modes** (Minute, Hour, Day, Week, Month, Quarter, Year)
 - 🌙 **Dark mode support** built-in
 - 📱 **Responsive design** that works across devices
 - 📈 **Progress tracking** with visual indicators and interactive updates
 - 🔄 **Task dependencies** and relationship management
-- ✨ **Animations** with smooth drag operations and configurable speeds
 - 🎯 **Event handling** for clicks, updates, selections
 - 🧩 **Composable API** with extensive custom render props for advanced customization
+- 🌊 **Smooth animations** with configurable speeds and thresholds
 - 🔄 **Auto-scrolling** during drag operations
 
-## 📦 Compatibility
+## Compatibility
 
-React Modern Gantt is designed for a wide range of modern project setups:
+React Modern Gantt is designed to be compatible with a wide range of project setups:
 
-- **React**: Compatible with React 17, 18, and 19
-- **Next.js**: First-class support for Next.js 13/14+ (including App Router)
-- **Tailwind CSS**: Works with both Tailwind CSS v3 and v4
-- **TypeScript/JavaScript**: Full TypeScript types included (TS v4/v5), works with JavaScript too
-- **Styling**: Use with or without Tailwind - standalone CSS included
+- **React**: Works with React 17, 18, and 19
+- **Next.js**: Full support for Next.js 13/14 (including App Router)
+- **Tailwind CSS**: Compatible with both Tailwind CSS v3 and v4
+- **TypeScript/JavaScript**: Full TypeScript type definitions included, but works perfectly with JavaScript projects too
 
-## 📥 Installation & Quick Start
+## Installation & Usage
 
-### Installation
+### Simple Installation
 
 ```bash
-# npm
 npm install react-modern-gantt
-
-# yarn
+# or
 yarn add react-modern-gantt
-
-# pnpm
-pnpm add react-modern-gantt
 ```
 
-### Basic Usage
+### Zero-Configuration Usage
 
 ```jsx
-import { GanttChart } from "react-modern-gantt";
-// Import included CSS (not needed if using Tailwind)
-import "react-modern-gantt/dist/index.css";
+import GanttChart from "react-modern-gantt";
+import "react-modern-gantt/dist/index.css"; // Import styles if not using Tailwind
 
-function App() {
+function MyApp() {
     const tasks = [
         {
             id: "team-1",
@@ -82,35 +75,63 @@ function App() {
         // Update your state here
     };
 
+    return <GanttChart tasks={tasks} onTaskUpdate={handleTaskUpdate} />;
+}
+```
+
+### Next.js Usage (App Router)
+
+```jsx
+// app/gantt/page.jsx
+"use client";
+
+import { NextGanttChart } from "react-modern-gantt/nextjs";
+import "react-modern-gantt/dist/index.css"; // Import styles if not using Tailwind
+
+export default function GanttPage() {
+    const tasks = [
+        // Your tasks here
+    ];
+
     return (
-        <GanttChart
+        <NextGanttChart
             tasks={tasks}
-            onTaskUpdate={handleTaskUpdate}
-            darkMode={false}
-            viewMode="month"
-            showProgress={true}
+            onTaskUpdate={(groupId, task) => {
+                /* Handle updates */
+            }}
         />
     );
 }
 ```
 
-### Usage with Next.js (App Router)
+### Advanced Usage Options
 
 ```jsx
-// app/gantt/page.js
-"use client";
-
-import { NextGanttChart } from "react-modern-gantt/nextjs";
+// Standard GanttChart component
+import { GanttChart } from "react-modern-gantt";
 import "react-modern-gantt/dist/index.css";
 
-export default function GanttPage() {
-    // Your task data and handlers...
+// Full import with all utilities
+import { GanttChart, ViewMode, TaskService, CollisionService } from "react-modern-gantt";
 
-    return <NextGanttChart tasks={tasks} onTaskUpdate={handleTaskUpdate} darkMode={false} />;
-}
+// Next.js specific version
+import { NextGanttChart } from "react-modern-gantt/nextjs";
 ```
 
-## 🧩 Core Concepts
+### Typescript Support
+
+Full TypeScript definitions are included:
+
+```tsx
+import { GanttChart, Task, TaskGroup, ViewMode } from "react-modern-gantt";
+
+// Define your tasks with proper typing
+const tasks: TaskGroup[] = [
+    // Your typed tasks here
+];
+```
+
+## Core Concepts
 
 React Modern Gantt is built around a few key concepts:
 
@@ -119,7 +140,63 @@ React Modern Gantt is built around a few key concepts:
 3. **View Modes** - Different timeline scales (Minute, Hour, Day, Week, Month, Quarter, Year)
 4. **Interactions** - Drag, resize, click, and other user interactions
 
-## 📄 Task and TaskGroup Interfaces
+## Component Props
+
+### GanttChart
+
+The main component for rendering a Gantt chart.
+
+#### Data and Configuration Props
+
+| Prop                    | Type          | Default              | Description                                              |
+| ----------------------- | ------------- | -------------------- | -------------------------------------------------------- |
+| `tasks`                 | `TaskGroup[]` | `[]`                 | Array of task groups                                     |
+| `startDate`             | `Date`        | Auto                 | Start date of the chart (defaults to earliest task date) |
+| `endDate`               | `Date`        | Auto                 | End date of the chart (defaults to latest task date)     |
+| `title`                 | `string`      | `"Project Timeline"` | Title displayed at the top of the chart                  |
+| `currentDate`           | `Date`        | `new Date()`         | Current date for the today marker                        |
+| `showCurrentDateMarker` | `boolean`     | `true`               | Whether to show the today marker                         |
+| `todayLabel`            | `string`      | `"Today"`            | Label for today marker                                   |
+| `editMode`              | `boolean`     | `true`               | Whether tasks can be dragged/resized                     |
+| `headerLabel`           | `string`      | `"Resources"`        | Header label for the task list column                    |
+| `showProgress`          | `boolean`     | `false`              | Whether to show progress indicators                      |
+| `darkMode`              | `boolean`     | `false`              | Whether to use dark mode                                 |
+| `locale`                | `string`      | `'default'`          | Locale for date formatting                               |
+| `viewMode`              | `ViewMode`    | `ViewMode.MONTH`     | Timeline display mode (day, week, month, quarter, year)  |
+| `showViewModeSelector`  | `boolean`     | `true`               | Whether to show the view mode selector                   |
+| `smoothDragging`        | `boolean`     | `true`               | Enable smooth animations for dragging operations         |
+| `movementThreshold`     | `number`      | `3`                  | Minimum pixel movement threshold to reduce jitter        |
+| `animationSpeed`        | `number`      | `0.25`               | Animation speed for smooth transitions (0.1-1)           |
+| `fontSize`              | `string`      | `'inherit'`          | Base font size                                           |
+| `rowHeight`             | `number`      | `40`                 | Height of task rows in pixels                            |
+| `styles`                | `GanttStyles` | `{}`                 | Custom style classes                                     |
+
+#### Custom Render Props
+
+These props allow advanced customization of each component part:
+
+| Prop                     | Type                                                                       | Description                             |
+| ------------------------ | -------------------------------------------------------------------------- | --------------------------------------- |
+| `renderTaskList`         | `(props: TaskListRenderProps) => ReactNode`                                | Custom render for the task list sidebar |
+| `renderTask`             | `(props: TaskRenderProps) => ReactNode`                                    | Custom render for individual task bars  |
+| `renderTooltip`          | `(props: TooltipRenderProps) => ReactNode`                                 | Custom render for task tooltips         |
+| `renderViewModeSelector` | `(props: ViewModeSelectorRenderProps) => ReactNode`                        | Custom render for view mode tabs        |
+| `renderHeader`           | `(props: HeaderRenderProps) => ReactNode`                                  | Custom render for the chart header      |
+| `renderTimelineHeader`   | `(props: TimelineHeaderRenderProps) => ReactNode`                          | Custom render for timeline header       |
+| `getTaskColor`           | `(props: TaskColorProps) => { backgroundColor, borderColor?, textColor? }` | Customize task colors                   |
+
+#### Event Handlers
+
+| Prop                | Type                                           | Description                                               |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| `onTaskUpdate`      | `(groupId: string, updatedTask: Task) => void` | Called when a task is moved, resized, or progress updated |
+| `onTaskClick`       | `(task: Task, group: TaskGroup) => void`       | Called when a task is clicked                             |
+| `onTaskSelect`      | `(task: Task, isSelected: boolean) => void`    | Called when a task is selected                            |
+| `onTaskDoubleClick` | `(task: Task) => void`                         | Called when a task is double-clicked                      |
+| `onGroupClick`      | `(group: TaskGroup) => void`                   | Called when a group is clicked                            |
+| `onViewModeChange`  | `(viewMode: ViewMode) => void`                 | Called when view mode changes                             |
+
+## Task and TaskGroup Interfaces
 
 ```typescript
 interface Task {
@@ -143,19 +220,19 @@ interface TaskGroup {
 }
 ```
 
-## 🖼️ View Modes
+## View Modes
 
 The component supports seven different view modes to adapt to different timeline needs:
 
-| View Mode | Description              | Best Used For                                |
-| --------- | ------------------------ | -------------------------------------------- |
-| `MINUTE`  | Shows individual minutes | Detailed short-term planning (minutes/hours) |
-| `HOUR`    | Shows hours              | Short-term planning (hours/days)             |
-| `DAY`     | Shows individual days    | Detailed short-term planning (days/weeks)    |
-| `WEEK`    | Shows weeks              | Short to medium-term planning (weeks/months) |
-| `MONTH`   | Shows months (default)   | Medium-term planning (months/quarters)       |
-| `QUARTER` | Shows quarters           | Medium to long-term planning (quarters/year) |
-| `YEAR`    | Shows years              | Long-term planning (years)                   |
+| View Mode | Description            | Best Used For                                |
+| --------- | ---------------------- | -------------------------------------------- |
+| `MINUTE`  | Shows minutes          | Ultra-detailed short-term planning (hours)   |
+| `HOUR`    | Shows hours            | Detailed tracking (hours/days)               |
+| `DAY`     | Shows individual days  | Detailed short-term planning (days/weeks)    |
+| `WEEK`    | Shows weeks            | Short to medium-term planning (weeks/months) |
+| `MONTH`   | Shows months (default) | Medium-term planning (months/quarters)       |
+| `QUARTER` | Shows quarters         | Medium to long-term planning (quarters/year) |
+| `YEAR`    | Shows years            | Long-term planning (years)                   |
 
 ```jsx
 import { GanttChart, ViewMode } from "react-modern-gantt";
@@ -167,183 +244,79 @@ import { GanttChart, ViewMode } from "react-modern-gantt";
 <GanttChart tasks={tasks} viewMode={ViewMode.DAY} />
 ```
 
-## ⚙️ Component Props
+## Customization
 
-### GanttChart
+### Using Custom Styles
 
-| Prop                    | Type                    | Default              | Description                                              |
-| ----------------------- | ----------------------- | -------------------- | -------------------------------------------------------- |
-| `tasks`                 | `TaskGroup[]`           | `[]`                 | Array of task groups                                     |
-| `startDate`             | `Date`                  | Auto                 | Start date of the chart (defaults to earliest task date) |
-| `endDate`               | `Date`                  | Auto                 | End date of the chart (defaults to latest task date)     |
-| `title`                 | `string`                | `"Project Timeline"` | Title displayed at the top of the chart                  |
-| `currentDate`           | `Date`                  | `new Date()`         | Current date for the today marker                        |
-| `showCurrentDateMarker` | `boolean`               | `true`               | Whether to show the today marker                         |
-| `todayLabel`            | `string`                | `"Today"`            | Label for today marker                                   |
-| `editMode`              | `boolean`               | `true`               | Whether tasks can be dragged/resized                     |
-| `headerLabel`           | `string`                | `"Resources"`        | Header label for the task list column                    |
-| `showProgress`          | `boolean`               | `false`              | Whether to show progress indicators                      |
-| `darkMode`              | `boolean`               | `false`              | Whether to use dark mode                                 |
-| `locale`                | `string`                | `'default'`          | Locale for date formatting                               |
-| `viewMode`              | `ViewMode`              | `ViewMode.MONTH`     | Timeline display mode                                    |
-| `viewModes`             | `ViewMode[]` \| `false` | Standard modes       | Available view modes, or `false` to hide selector        |
-| `smoothDragging`        | `boolean`               | `true`               | Enable smooth animations for dragging operations         |
-| `movementThreshold`     | `number`                | `3`                  | Minimum pixel movement threshold to reduce jitter        |
-| `animationSpeed`        | `number`                | `0.25`               | Animation speed for smooth transitions (0.1-1)           |
-| `fontSize`              | `string`                | `'inherit'`          | Base font size                                           |
-| `rowHeight`             | `number`                | `40`                 | Height of task rows in pixels                            |
-| `styles`                | `GanttStyles`           | `{}`                 | Custom style classes                                     |
-| `theme`                 | `Partial<GanttTheme>`   | `{}`                 | Theme customization object                               |
-
-### Event Handlers
-
-| Prop                | Type                                           | Description                                               |
-| ------------------- | ---------------------------------------------- | --------------------------------------------------------- |
-| `onTaskUpdate`      | `(groupId: string, updatedTask: Task) => void` | Called when a task is moved, resized, or progress updated |
-| `onTaskClick`       | `(task: Task, group: TaskGroup) => void`       | Called when a task is clicked                             |
-| `onTaskSelect`      | `(task: Task, isSelected: boolean) => void`    | Called when a task is selected                            |
-| `onTaskDoubleClick` | `(task: Task) => void`                         | Called when a task is double-clicked                      |
-| `onGroupClick`      | `(group: TaskGroup) => void`                   | Called when a group is clicked                            |
-| `onViewModeChange`  | `(viewMode: ViewMode) => void`                 | Called when view mode changes                             |
-
-### Custom Render Props
-
-| Prop                     | Type                                                                       | Description                             |
-| ------------------------ | -------------------------------------------------------------------------- | --------------------------------------- |
-| `renderTaskList`         | `(props: TaskListRenderProps) => ReactNode`                                | Custom render for the task list sidebar |
-| `renderTask`             | `(props: TaskRenderProps) => ReactNode`                                    | Custom render for individual task bars  |
-| `renderTooltip`          | `(props: TooltipRenderProps) => ReactNode`                                 | Custom render for task tooltips         |
-| `renderViewModeSelector` | `(props: ViewModeSelectorRenderProps) => ReactNode`                        | Custom render for view mode tabs        |
-| `renderHeader`           | `(props: HeaderRenderProps) => ReactNode`                                  | Custom render for the chart header      |
-| `renderTimelineHeader`   | `(props: TimelineHeaderRenderProps) => ReactNode`                          | Custom render for timeline header       |
-| `getTaskColor`           | `(props: TaskColorProps) => { backgroundColor, borderColor?, textColor? }` | Customize task colors                   |
-
-## 🎨 Customization
-
-### Using Theme System
-
-React Modern Gantt provides a powerful theming system:
+React Modern Gantt supports easy customization with Tailwind CSS classes or your own CSS:
 
 ```jsx
 <GanttChart
     tasks={tasks}
-    theme={{
-        colors: {
-            task: {
-                background: "#4f46e5", // Change task background color
-                text: "#ffffff", // Change task text color
-            },
-            timeline: {
-                marker: "#dc2626", // Change today marker color
-            },
-        },
-        sizes: {
-            rowHeight: 50, // Taller rows
-            borderRadius: "8px", // Rounder corners
-        },
-        animation: {
-            speed: 0.3, // Slightly slower animations
-        },
+    styles={{
+        container: "border-2 border-blue-200",
+        title: "text-2xl text-blue-800",
+        taskList: "bg-blue-50",
+        timeline: "bg-gray-50",
+        todayMarker: "bg-red-500",
+        taskRow: "hover:bg-slate-50",
+        tooltip: "shadow-lg",
     }}
     onTaskUpdate={handleTaskUpdate}
 />
 ```
 
-### Using Tailwind CSS
+### Dark Mode
 
-#### Tailwind CSS v3
+Dark mode is built-in and easy to enable:
 
-Configure your `tailwind.config.js`:
+```jsx
+<GanttChart tasks={tasks} darkMode={true} onTaskUpdate={handleTaskUpdate} />
+```
+
+### Tailwind CSS Integration
+
+#### With Tailwind CSS v3
+
+Configure content paths in your `tailwind.config.js`:
 
 ```js
-// tailwind.config.js
 module.exports = {
     content: ["./src/**/*.{js,jsx,ts,tsx}", "./node_modules/react-modern-gantt/**/*.{js,jsx,ts,tsx}"],
-    // ... rest of your config
+    // ...rest of your config
 };
 ```
 
-#### Tailwind CSS v4
+#### With Tailwind CSS v4
 
-For Tailwind v4, you can:
-
-1. Use the CSS config approach:
-
-```css
-/* styles.css */
-@import "tailwindcss";
-
-@config {
-    content:
-        [ "./src/**/*.{js,jsx,ts,tsx}",
-        "./node_modules/react-modern-gantt/**/*.{js,jsx,ts,tsx}"];
-}
-```
-
-2. Or use our helper for JS configuration:
+For Tailwind v4, you can use either the content option (similar to v3) or the new pattern-based config:
 
 ```js
-import { createTailwindConfig } from "tailwindcss";
-import { ganttTailwindContent } from "react-modern-gantt/tailwind.v4.js";
-
-export default createTailwindConfig({
-    content: [
-        ...ganttTailwindContent,
-        "./src/**/*.{js,jsx,ts,tsx}", // Your own files
-    ],
-});
+export default {
+    content: {
+        files: ["./src/**/*.{js,jsx,ts,tsx}", "./node_modules/react-modern-gantt/**/*.{js,jsx,ts,tsx}"],
+    },
+    // ...rest of your config
+};
 ```
 
-### Using CSS Variables
+Or if you're using the new patterns approach:
 
-You can override CSS variables in your global CSS:
-
-```css
-:root {
-    --rmg-bg-color: #f8fafc;
-    --rmg-text-color: #334155;
-    --rmg-border-color: #e5e7eb;
-    --rmg-task-bg-color: #3b82f6;
-    --rmg-task-text-color: #ffffff;
-}
-
-/* Dark mode */
-.dark {
-    --rmg-bg-color: #1e293b;
-    --rmg-text-color: #f1f5f9;
-    --rmg-task-bg-color: #4f46e5;
-}
+```js
+export default {
+    content: {
+        // Maintain standard patterns
+        relative: ["./src/**/*.{js,jsx,ts,tsx}"],
+        // Add package to monitored directories
+        packages: ["react-modern-gantt"],
+    },
+    // ...rest of your config
+};
 ```
 
-### Custom Task Rendering
+## Handling Task Updates
 
-```jsx
-<GanttChart
-    tasks={tasks}
-    renderTask={({ task, leftPx, widthPx, topPx, isHovered, isDragging, showProgress }) => (
-        <div
-            className={`absolute h-8 rounded flex items-center px-2
-          ${isHovered ? "ring-2 ring-blue-500" : ""}
-          ${task.color || "bg-blue-500"}`}
-            style={{
-                left: `${leftPx}px`,
-                width: `${widthPx}px`,
-                top: `${topPx}px`,
-            }}>
-            <div className="text-white truncate">{task.name}</div>
-            {showProgress && (
-                <div className="absolute bottom-1 left-1 right-1 h-1 bg-black/20 rounded-full">
-                    <div className="h-full bg-white/80 rounded-full" style={{ width: `${task.percent || 0}%` }} />
-                </div>
-            )}
-        </div>
-    )}
-/>
-```
-
-## ✅ Handling Task Updates
-
-Handle task updates with validation:
+Handle task updates with custom logic:
 
 ```jsx
 const handleTaskUpdate = (groupId, updatedTask) => {
@@ -354,7 +327,7 @@ const handleTaskUpdate = (groupId, updatedTask) => {
     }
 
     // Check for progress updates
-    const originalTask = findTaskById(updatedTask.id);
+    const originalTask = tasks.find(group => group.id === groupId)?.tasks.find(task => task.id === updatedTask.id);
 
     if (originalTask && originalTask.percent !== updatedTask.percent) {
         console.log(`Progress updated: ${originalTask.percent}% → ${updatedTask.percent}%`);
@@ -374,68 +347,28 @@ const handleTaskUpdate = (groupId, updatedTask) => {
 };
 ```
 
-## 🔍 Advanced Examples
+## Exported Utility Functions and Classes
 
-### Using Multiple View Modes
+React Modern Gantt exports several utility functions and classes:
 
-```jsx
-import { useState } from "react";
-import { GanttChart, ViewMode } from "react-modern-gantt";
+### Common Utility Functions
 
-function MultiViewGantt() {
-    const [viewMode, setViewMode] = useState(ViewMode.MONTH);
+| Function                | Description                                  |
+| ----------------------- | -------------------------------------------- |
+| `formatDate`            | Format a date with different display options |
+| `getMonthsBetween`      | Get array of months between two dates        |
+| `getDaysInMonth`        | Get number of days in a month                |
+| `detectTaskOverlaps`    | Detect and group overlapping tasks           |
+| `calculateTaskPosition` | Calculate position of a task                 |
+| `formatDateRange`       | Format a date range as a string              |
+| `calculateDuration`     | Calculate duration between two dates         |
+| `findEarliestDate`      | Find earliest date in task groups            |
+| `findLatestDate`        | Find latest date in task groups              |
 
-    const handleViewModeChange = newMode => {
-        setViewMode(newMode);
-    };
-
-    return (
-        <GanttChart
-            tasks={tasks}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            // Only show Day, Month and Year options
-            viewModes={[ViewMode.DAY, ViewMode.MONTH, ViewMode.YEAR]}
-        />
-    );
-}
-```
-
-### Custom Header
+### Utility Classes
 
 ```jsx
-<GanttChart
-    tasks={tasks}
-    renderHeader={({ title, darkMode, viewMode, onViewModeChange }) => (
-        <div className="flex justify-between items-center p-4 border-b">
-            <h1 className="text-xl font-bold flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                {title}
-            </h1>
-            <div className="flex space-x-4 items-center">
-                <span className="text-sm text-gray-500">Current view:</span>
-                <select
-                    value={viewMode}
-                    onChange={e => onViewModeChange(e.target.value)}
-                    className="border rounded p-1">
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="quarter">Quarter</option>
-                    <option value="year">Year</option>
-                </select>
-            </div>
-        </div>
-    )}
-/>
-```
-
-## 🛠️ Exported Utility Functions and Classes
-
-```jsx
-import { TaskService, CollisionService, formatDate, getMonthsBetween, calculateTaskPosition } from "react-modern-gantt";
+import { TaskService, CollisionService } from "react-modern-gantt";
 
 // Calculate task position
 const { leftPx, widthPx } = TaskService.calculateTaskPixelPosition(
@@ -451,14 +384,14 @@ const { leftPx, widthPx } = TaskService.calculateTaskPixelPosition(
 const wouldCollide = CollisionService.wouldCollide(taskToMove, allTasks, ViewMode.MONTH);
 ```
 
-## 📱 Browser Support
+## Browser Support
 
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)
 - Edge (latest)
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -468,6 +401,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

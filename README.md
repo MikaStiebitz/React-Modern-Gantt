@@ -6,11 +6,11 @@ A flexible, customizable Gantt chart component for React applications with drag-
 [![license](https://img.shields.io/npm/l/react-modern-gantt.svg)](https://github.com/MikaStiebitz/React-Modern-Gantt/blob/main/LICENSE)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/react-modern-gantt.svg)](https://bundlephobia.com/result?p=react-modern-gantt)
 
-![Dark Mode Preview](https://github.com/user-attachments/assets/110b971a-0386-42b8-a237-d7d1d6eae132)
+![Dark](https://github.com/user-attachments/assets/110b971a-0386-42b8-a237-d7d1d6eae132)
 
 <a href="https://react-gantt-demo.vercel.app/" target="_blank" rel="noopener noreferrer">LIVE DEMO</a>
 
-## 🎯 Features
+## 📊 Features
 
 - 📊 **Interactive timeline** with drag-and-drop task scheduling
 - 🎨 **Fully customizable** with CSS variables, Tailwind CSS, or custom styling
@@ -19,7 +19,7 @@ A flexible, customizable Gantt chart component for React applications with drag-
 - 📱 **Responsive design** that works across devices
 - 📈 **Progress tracking** with visual indicators and interactive updates
 - 🔄 **Task dependencies** and relationship management
-- ✨ **Advanced animations** with configurable speeds and thresholds
+- ✨ **Animations** with smooth drag operations and configurable speeds
 - 🎯 **Event handling** for clicks, updates, selections
 - 🧩 **Composable API** with extensive custom render props for advanced customization
 - 🔄 **Auto-scrolling** during drag operations
@@ -100,7 +100,7 @@ function App() {
 // app/gantt/page.js
 "use client";
 
-import { NextGanttChart } from "react-modern-gantt";
+import { NextGanttChart } from "react-modern-gantt/nextjs";
 import "react-modern-gantt/dist/index.css";
 
 export default function GanttPage() {
@@ -249,62 +249,73 @@ React Modern Gantt provides a powerful theming system:
 />
 ```
 
-### Using Tailwind CSS Classes
+### Using Tailwind CSS
 
-You can customize with Tailwind CSS classes:
+#### Tailwind CSS v3
 
-```jsx
-<GanttChart
-    tasks={tasks}
-    styles={{
-        container: "border-2 border-blue-200 rounded-xl",
-        title: "text-2xl text-blue-800 font-bold",
-        taskList: "bg-blue-50",
-        timeline: "bg-gray-50",
-        todayMarker: "bg-red-500",
-        taskRow: "hover:bg-slate-50",
-        tooltip: "shadow-lg",
-    }}
-    onTaskUpdate={handleTaskUpdate}
-/>
+Configure your `tailwind.config.js`:
+
+```js
+// tailwind.config.js
+module.exports = {
+    content: ["./src/**/*.{js,jsx,ts,tsx}", "./node_modules/react-modern-gantt/**/*.{js,jsx,ts,tsx}"],
+    // ... rest of your config
+};
 ```
 
-### Dark Mode
+#### Tailwind CSS v4
 
-Dark mode is built-in and easy to enable:
+For Tailwind v4, you can:
 
-```jsx
-<GanttChart tasks={tasks} darkMode={true} onTaskUpdate={handleTaskUpdate} />
-```
-
-### Custom CSS Variables
-
-For global styling, you can override CSS variables:
+1. Use the CSS config approach:
 
 ```css
-/* In your CSS file */
+/* styles.css */
+@import "tailwindcss";
+
+@config {
+    content:
+        [ "./src/**/*.{js,jsx,ts,tsx}",
+        "./node_modules/react-modern-gantt/**/*.{js,jsx,ts,tsx}"];
+}
+```
+
+2. Or use our helper for JS configuration:
+
+```js
+import { createTailwindConfig } from "tailwindcss";
+import { ganttTailwindContent } from "react-modern-gantt/tailwind.v4.js";
+
+export default createTailwindConfig({
+    content: [
+        ...ganttTailwindContent,
+        "./src/**/*.{js,jsx,ts,tsx}", // Your own files
+    ],
+});
+```
+
+### Using CSS Variables
+
+You can override CSS variables in your global CSS:
+
+```css
 :root {
     --rmg-bg-color: #f8fafc;
     --rmg-text-color: #334155;
-    --rmg-border-color: #cbd5e1;
+    --rmg-border-color: #e5e7eb;
     --rmg-task-bg-color: #3b82f6;
     --rmg-task-text-color: #ffffff;
-    --rmg-timeline-marker-color: #ef4444;
 }
 
-/* Dark mode overrides */
+/* Dark mode */
 .dark {
     --rmg-bg-color: #1e293b;
     --rmg-text-color: #f1f5f9;
-    --rmg-border-color: #475569;
     --rmg-task-bg-color: #4f46e5;
-    --rmg-task-text-color: #ffffff;
 }
 ```
 
 ### Custom Task Rendering
-
-Fully customize task appearance:
 
 ```jsx
 <GanttChart
@@ -312,8 +323,8 @@ Fully customize task appearance:
     renderTask={({ task, leftPx, widthPx, topPx, isHovered, isDragging, showProgress }) => (
         <div
             className={`absolute h-8 rounded flex items-center px-2
-        ${isHovered ? "ring-2 ring-blue-500" : ""}
-        ${task.color || "bg-blue-500"}`}
+          ${isHovered ? "ring-2 ring-blue-500" : ""}
+          ${task.color || "bg-blue-500"}`}
             style={{
                 left: `${leftPx}px`,
                 width: `${widthPx}px`,

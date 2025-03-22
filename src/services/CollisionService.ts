@@ -14,9 +14,15 @@ export class CollisionService {
             return [];
         }
 
+        // Make sure we have valid tasks with dates
+        const validTasks = tasks.filter(task => task && task.startDate instanceof Date && task.endDate instanceof Date);
+
+        if (validTasks.length === 0) {
+            return [];
+        }
+
         // Sort tasks by start date to optimize row placement
-        const sortedTasks = [...tasks].sort((a, b) => {
-            if (!a.startDate || !b.startDate) return 0;
+        const sortedTasks = [...validTasks].sort((a, b) => {
             return a.startDate.getTime() - b.startDate.getTime();
         });
 
@@ -54,7 +60,22 @@ export class CollisionService {
      * Uses a more precise algorithm that matches visual representation based on view mode
      */
     public static tasksVisuallyOverlap(taskA: Task, taskB: Task, viewMode: ViewMode = ViewMode.MONTH): boolean {
-        if (!taskA.startDate || !taskA.endDate || !taskB.startDate || !taskB.endDate) {
+        if (!taskA || !taskB || !taskA.id || !taskB.id) {
+            return false;
+        }
+
+        // Skip self-comparison
+        if (taskA.id === taskB.id) {
+            return false;
+        }
+
+        // Ensure valid dates
+        if (
+            !(taskA.startDate instanceof Date) ||
+            !(taskA.endDate instanceof Date) ||
+            !(taskB.startDate instanceof Date) ||
+            !(taskB.endDate instanceof Date)
+        ) {
             return false;
         }
 
@@ -69,8 +90,8 @@ export class CollisionService {
 
         // Check if tasks overlap with appropriate buffer
         return (
-            // Check if A overlaps with B (with buffer)
-            (startA + timeBuffer < endB - timeBuffer && endA - timeBuffer > startB + timeBuffer) ||
+            // Standard overlap check: A starts before B ends AND A ends after B starts
+            (startA < endB && endA > startB) ||
             // Check for very short tasks that might visually overlap due to minimum width
             Math.abs(startA - startB) < timeBuffer * 2 ||
             Math.abs(endA - endB) < timeBuffer * 2
@@ -116,6 +137,10 @@ export class CollisionService {
         viewMode: ViewMode = ViewMode.MONTH,
         excludeTaskId?: string
     ): boolean {
+        if (!task || !Array.isArray(allTasks)) {
+            return false;
+        }
+
         return allTasks.some(existingTask => {
             // Skip self-comparison or excluded task
             if (existingTask.id === task.id || existingTask.id === excludeTaskId) {
@@ -135,9 +160,18 @@ export class CollisionService {
         allTasks: Task[],
         viewMode: ViewMode = ViewMode.MONTH
     ): Task[][] {
-        // Create updated tasks array
-        const updatedTasks = allTasks.map(task => (task.id === updatedTask.id ? updatedTask : task));
+        if (!updatedTask || !Array.isArray(allTasks)) {
+            return this.detectOverlaps(allTasks, viewMode);
+        }
 
-        return this.detectOverlaps(updatedTasks, viewMode);
+        try {
+            // Create updated tasks array
+            const updatedTasks = allTasks.map(task => (task.id === updatedTask.id ? updatedTask : task));
+
+            return this.detectOverlaps(updatedTasks, viewMode);
+        } catch (error) {
+            console.error("Error in getPreviewArrangement:", error);
+            return this.detectOverlaps(allTasks, viewMode);
+        }
     }
 }

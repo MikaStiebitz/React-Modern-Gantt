@@ -1,3 +1,4 @@
+import React from "react";
 import { Task } from "@/types";
 interface UseAutoScrollProps {
     scrollContainerRef: React.RefObject<HTMLDivElement | null>;

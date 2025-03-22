@@ -2,7 +2,7 @@ import { Task, ViewMode } from "@/types";
 interface UseTaskCollisionsProps {
     tasks: Task[];
     previewTask: Task | null;
-    viewMode: ViewMode | undefined;
+    viewMode: ViewMode;
 }
 /**
  * Hook for detecting and resolving task collisions/overlaps

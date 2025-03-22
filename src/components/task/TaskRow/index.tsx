@@ -1,5 +1,5 @@
-import React from "react";
-import { TaskRowProps } from "@/types";
+import React, { useRef, useEffect } from "react";
+import { TaskRowProps, Task, ViewMode } from "@/types";
 import { Tooltip } from "@/components/ui";
 import TaskRowContent from "./TaskRowContent";
 import { useTaskInteractions } from "./hooks/useTaskInteractions";
@@ -24,7 +24,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     onTaskClick,
     onTaskSelect,
     onAutoScrollChange,
-    viewMode,
+    viewMode = ViewMode.MONTH,
     scrollContainerRef,
     smoothDragging = true,
     movementThreshold = 3,
@@ -43,10 +43,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
     const validEndDate = endDate instanceof Date ? endDate : new Date();
 
     // Generate unique instance ID for this task row
-    const instanceId = React.useId();
+    const instanceId = React.useId ? React.useId() : `task-row-${Math.random().toString(36).substring(2, 11)}`;
 
     // Reference to the row element for positioning calculations
-    const rowRef = React.useRef<HTMLDivElement>(null);
+    const rowRef = useRef<HTMLDivElement>(null);
 
     // Hook for task interactions (drag, resize, hover)
     const {
@@ -55,7 +55,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
         dragType,
         previewTask,
         tooltipPosition,
-        initialTaskState,
         handleMouseDown,
         handleMouseMove,
         handleMouseUp,
@@ -108,7 +107,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     };
 
     // Clean up event listeners on unmount
-    React.useEffect(() => {
+    useEffect(() => {
         return () => {
             document.removeEventListener("mouseup", handleMouseUp);
             document.removeEventListener("mousemove", handleMouseMove as unknown as EventListener);
@@ -129,28 +128,64 @@ const TaskRow: React.FC<TaskRowProps> = ({
             ref={rowRef}
             data-testid={`task-row-${taskGroup.id}`}
             data-instance-id={instanceId}>
-            {/* TaskRowContent renders the actual tasks */}
-            <TaskRowContent
-                taskRows={taskRows}
-                taskGroup={taskGroup}
-                startDate={validStartDate}
-                endDate={validEndDate}
-                totalMonths={totalMonths}
-                monthWidth={monthWidth}
-                editMode={editMode}
-                showProgress={showProgress}
-                hoveredTask={hoveredTask}
-                draggingTask={draggingTask}
-                onMouseDown={handleMouseDown}
-                onTaskClick={handleTaskClick}
-                onMouseEnter={handleTaskMouseEnter}
-                onMouseLeave={handleTaskMouseLeave}
-                onProgressUpdate={handleProgressUpdate}
-                instanceId={instanceId}
-                viewMode={viewMode}
-                renderTask={renderTask}
-                getTaskColor={getTaskColor}
-            />
+            {/* Render tasks by row to prevent overlaps */}
+            {taskRows.map((rowTasks, rowIndex) => (
+                <React.Fragment key={`task-row-${rowIndex}`}>
+                    {rowTasks.map(task => {
+                        // Skip render if task is invalid
+                        if (!task || !task.id || !(task.startDate instanceof Date) || !(task.endDate instanceof Date)) {
+                            return null;
+                        }
+
+                        try {
+                            // Import directly from TaskService for correct positioning
+                            const { TaskService } = require("@/services");
+
+                            // Calculate task position
+                            const { leftPx, widthPx } = TaskService.calculateTaskPixelPosition(
+                                task,
+                                validStartDate,
+                                validEndDate,
+                                totalMonths,
+                                monthWidth,
+                                viewMode
+                            );
+
+                            const isHovered = hoveredTask?.id === task.id;
+                            const isDragging = draggingTask?.id === task.id;
+                            const topPx = rowIndex * 40 + 10;
+
+                            // Import and use TaskItem directly
+                            const TaskItem = require("@/components/task/TaskItem").default;
+
+                            return (
+                                <TaskItem
+                                    key={`task-${task.id}`}
+                                    task={task}
+                                    leftPx={leftPx}
+                                    widthPx={widthPx}
+                                    topPx={topPx}
+                                    isHovered={isHovered}
+                                    isDragging={isDragging}
+                                    editMode={editMode}
+                                    showProgress={showProgress}
+                                    instanceId={instanceId}
+                                    onMouseDown={handleMouseDown}
+                                    onMouseEnter={handleTaskMouseEnter}
+                                    onMouseLeave={handleTaskMouseLeave}
+                                    onClick={handleTaskClick}
+                                    renderTask={renderTask}
+                                    getTaskColor={getTaskColor}
+                                    onProgressUpdate={handleProgressUpdate}
+                                />
+                            );
+                        } catch (error) {
+                            console.error("Error rendering task:", error);
+                            return null;
+                        }
+                    })}
+                </React.Fragment>
+            ))}
 
             {/* Task tooltip */}
             {(hoveredTask || draggingTask) && (

@@ -7,7 +7,7 @@ interface UseTaskInteractionsProps {
     startDate: Date;
     endDate: Date;
     editMode: boolean;
-    viewMode: ViewMode | undefined;
+    viewMode: ViewMode;
     monthWidth: number;
     totalMonths: number;
     onTaskUpdate?: (groupId: string, updatedTask: Task) => void;
@@ -71,7 +71,7 @@ export const useTaskInteractions = ({
     const shouldUseSmoothDragging = smoothDragging && viewMode !== ViewMode.DAY;
 
     // Task update helpers
-    const updateDraggingTask = (task: Task) => {
+    const updateDraggingTask = useCallback((task: Task) => {
         const taskCopy = {
             ...task,
             startDate: new Date(task.startDate),
@@ -79,9 +79,9 @@ export const useTaskInteractions = ({
         };
         setDraggingTask(taskCopy);
         draggingTaskRef.current = taskCopy;
-    };
+    }, []);
 
-    const updatePreviewTask = (task: Task) => {
+    const updatePreviewTask = useCallback((task: Task) => {
         const taskCopy = {
             ...task,
             startDate: new Date(task.startDate),
@@ -89,7 +89,7 @@ export const useTaskInteractions = ({
         };
         setPreviewTask(taskCopy);
         previewTaskRef.current = taskCopy;
-    };
+    }, []);
 
     // Animation function
     const animateTaskMovement = useCallback(() => {
@@ -199,7 +199,7 @@ export const useTaskInteractions = ({
                 console.error("Error updating dates:", error);
             }
         },
-        [draggingTaskRef, monthWidth, startDate, endDate, totalMonths, viewMode]
+        [draggingTaskRef, monthWidth, startDate, endDate, totalMonths, viewMode, updatePreviewTask]
     );
 
     // Finalize task positioning on mouse up
@@ -385,7 +385,7 @@ export const useTaskInteractions = ({
             document.addEventListener("mouseup", handleMouseUp);
             document.addEventListener("mousemove", handleMouseMove as unknown as EventListener);
         },
-        [editMode, instanceId, shouldUseSmoothDragging, animateTaskMovement]
+        [editMode, instanceId, shouldUseSmoothDragging, animateTaskMovement, updateDraggingTask, updatePreviewTask]
     );
 
     const handleMouseMove = useCallback(
@@ -409,6 +409,11 @@ export const useTaskInteractions = ({
                 try {
                     // Calculate the total movement since drag started
                     const totalDeltaX = e.clientX - dragStartX;
+
+                    // Apply movement threshold to prevent accidental small movements
+                    if (Math.abs(totalDeltaX) < movementThreshold && dragType === "move") {
+                        return;
+                    }
 
                     // Get the timeline's total width
                     const totalWidth = totalMonths * monthWidth;
@@ -510,6 +515,7 @@ export const useTaskInteractions = ({
             rowRef,
             hoveredTask,
             animateTaskMovement,
+            movementThreshold,
         ]
     );
 
@@ -584,8 +590,10 @@ export const useTaskInteractions = ({
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
+            document.removeEventListener("mouseup", handleMouseUp);
+            document.removeEventListener("mousemove", handleMouseMove as unknown as EventListener);
         };
-    }, []);
+    }, [handleMouseUp, handleMouseMove]);
 
     return {
         hoveredTask,

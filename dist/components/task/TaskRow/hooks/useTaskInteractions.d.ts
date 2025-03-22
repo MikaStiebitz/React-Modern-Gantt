@@ -4,7 +4,7 @@ interface UseTaskInteractionsProps {
     startDate: Date;
     endDate: Date;
     editMode: boolean;
-    viewMode: ViewMode | undefined;
+    viewMode: ViewMode;
     monthWidth: number;
     totalMonths: number;
     onTaskUpdate?: (groupId: string, updatedTask: Task) => void;

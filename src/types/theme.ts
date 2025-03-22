@@ -248,7 +248,6 @@ export function convertStylesToTailwind(theme: GanttTheme): Record<string, strin
         taskItem: `bg-[${theme.colors.task.background}] text-[${theme.colors.task.text}] rounded-[${theme.sizes.borderRadius}]`,
         timeline: `bg-[${theme.colors.timeline.background}]`,
         todayMarker: `bg-[${theme.colors.timeline.marker}]`,
-        scrollbar: `bg-[${theme.colors.scrollbar.track}]`,
-        scrollbarThumb: `bg-[${theme.colors.scrollbar.thumb}]`,
+        // ...more Tailwind class mappings
     };
 }

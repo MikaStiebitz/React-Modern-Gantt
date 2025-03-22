@@ -99,6 +99,8 @@ export class TaskService {
      * Create an updated task with new dates
      */
     public static createUpdatedTask(task: Task, newStartDate: Date, newEndDate: Date): Task {
+        if (!task) return task;
+
         return {
             ...task,
             startDate: new Date(newStartDate),
@@ -118,8 +120,9 @@ export class TaskService {
         viewMode: ViewMode = ViewMode.MONTH
     ): { leftPx: number; widthPx: number } {
         try {
-            if (!(task.startDate instanceof Date) || !(task.endDate instanceof Date)) {
-                throw new Error("Invalid dates in task");
+            if (!task || !(task.startDate instanceof Date) || !(task.endDate instanceof Date)) {
+                console.warn("Invalid task data in calculateTaskPixelPosition:", task);
+                return { leftPx: 0, widthPx: 20 };
             }
 
             // Normalize dates based on view mode for consistent calculations
@@ -219,6 +222,9 @@ export class TaskService {
 
             // Calculate the full timeline range
             const totalTimelineRange = timelineEndTime - timelineStartTime;
+            if (totalTimelineRange <= 0) {
+                return { leftPx: 0, widthPx: 20 };
+            }
 
             // Convert time differences to pixel positions
             const distanceFromStart = taskStartTime - timelineStartTime;
@@ -315,11 +321,25 @@ export class TaskService {
      * Check if two date ranges overlap
      */
     public static datesOverlap(startA: Date, endA: Date, startB: Date, endB: Date): boolean {
-        return (
-            isWithinInterval(startA, { start: startB, end: endB }) ||
-            isWithinInterval(endA, { start: startB, end: endB }) ||
-            isWithinInterval(startB, { start: startA, end: endA }) ||
-            isWithinInterval(endB, { start: startA, end: endA })
-        );
+        try {
+            if (
+                !(startA instanceof Date) ||
+                !(endA instanceof Date) ||
+                !(startB instanceof Date) ||
+                !(endB instanceof Date)
+            ) {
+                return false;
+            }
+
+            return (
+                isWithinInterval(startA, { start: startB, end: endB }) ||
+                isWithinInterval(endA, { start: startB, end: endB }) ||
+                isWithinInterval(startB, { start: startA, end: endA }) ||
+                isWithinInterval(endB, { start: startA, end: endA })
+            );
+        } catch (error) {
+            console.error("Error checking dates overlap:", error);
+            return false;
+        }
     }
 }

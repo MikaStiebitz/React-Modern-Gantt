@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Task, ViewMode } from "@/types";
 import { CollisionService } from "@/services";
 
 interface UseTaskCollisionsProps {
     tasks: Task[];
     previewTask: Task | null;
-    viewMode: ViewMode | undefined;
+    viewMode: ViewMode;
 }
 
 /**

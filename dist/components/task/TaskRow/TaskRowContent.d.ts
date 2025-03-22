@@ -12,7 +12,7 @@ interface TaskRowContentProps {
     hoveredTask: Task | null;
     draggingTask: Task | null;
     instanceId: string;
-    viewMode: ViewMode | undefined;
+    viewMode: ViewMode;
     onMouseDown: (event: React.MouseEvent, task: Task, type: "move" | "resize-left" | "resize-right") => void;
     onTaskClick: (event: React.MouseEvent, task: Task) => void;
     onMouseEnter: (event: React.MouseEvent, task: Task) => void;

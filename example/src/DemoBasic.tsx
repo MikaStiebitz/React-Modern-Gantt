@@ -1,8 +1,10 @@
 import * as React from "react";
 import { Task, TaskGroup } from "react-modern-gantt";
 import { GanttChart } from "react-modern-gantt";
-import "../../dist/dist/index.css";
 import { basicDemoData } from "./data";
+
+// Import included CSS (not needed if using Tailwind)
+import "../../dist/dist/index.css";
 
 interface DemoBasicProps {
     darkMode: boolean;

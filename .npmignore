@@ -29,3 +29,12 @@ coverage/
 *.ntvs*
 *.njsproj
 *.sln
+
+# Generated files
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Local env files
+.env*.local

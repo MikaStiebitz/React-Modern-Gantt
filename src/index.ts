@@ -22,12 +22,18 @@ export { Timeline, TodayMarker } from "./components/timeline";
 // UI components
 export { Tooltip, ViewModeSelector } from "./components/ui";
 
+// Theme components
+export { GanttThemeProvider, useGanttTheme } from "./components/core/GanttThemeProvider";
+
 // Types
 export type {
     // Core types
     Task,
     TaskGroup,
     GanttStyles,
+    GanttTheme,
+    lightTheme,
+    darkTheme,
 
     // Component props
     GanttChartProps,

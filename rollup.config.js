@@ -1,3 +1,4 @@
+// File: rollup.config.js
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
@@ -8,44 +9,54 @@ import autoprefixer from "autoprefixer";
 import { createFilter } from "@rollup/pluginutils";
 import pkg from "./package.json" assert { type: "json" };
 
+// Process "use client" directive for Next.js components
+const useClientDirectivePlugin = {
+    name: "replace-use-client",
+    transform(code, id) {
+        // Only apply to .tsx and .ts files
+        const filter = createFilter(["**/*.ts", "**/*.tsx"]);
+        if (!filter(id)) return null;
+
+        // If the file doesn't include 'use client', return null (no transformation needed)
+        if (!code.includes('"use client"') && !code.includes("'use client'")) return null;
+
+        // Replace the directive
+        return {
+            code: code.replace(/'use client';?\s*|"use client";?\s*/g, ""),
+            map: { mappings: "" },
+        };
+    },
+};
+
+// Define all inputs in one bundle to ensure TypeScript types are generated correctly
 export default {
-    input: "src/index.ts",
+    input: {
+        index: "src/index.ts",
+        "nextjs/index": "src/nextjs/index.ts",
+    },
     output: [
         {
-            file: pkg.main,
+            dir: "dist",
             format: "cjs",
             exports: "named",
             sourcemap: true,
+            entryFileNames: "[name].js",
+            preserveModules: false,
         },
         {
-            file: pkg.module,
+            dir: "dist",
             format: "esm",
             exports: "named",
             sourcemap: true,
+            entryFileNames: "[name].esm.js",
+            preserveModules: false,
         },
     ],
     plugins: [
         peerDepsExternal(),
         resolve(),
         commonjs(),
-        // Handle "use client" directive with proper sourcemap support
-        {
-            name: "replace-use-client",
-            transform(code, id) {
-                // Only apply to .tsx and .ts files
-                const filter = createFilter(["**/*.ts", "**/*.tsx"]);
-                if (!filter(id)) return null;
-
-                // If the file doesn't include 'use client', return null (no transformation needed)
-                if (!code.includes('"use client"') && !code.includes("'use client'")) return null;
-
-                // Replace the directive
-                return {
-                    code: code.replace(/'use client';?\s*|"use client";?\s*/g, ""),
-                    map: { mappings: "" },
-                };
-            },
-        },
+        useClientDirectivePlugin,
         typescript({
             tsconfig: "./tsconfig.json",
             exclude: ["**/__tests__/**", "**/examples/**", "**/example/**"],
@@ -59,10 +70,8 @@ export default {
             plugins: [autoprefixer()],
             minimize: true,
             modules: false,
-            // Change to TRUE to inject CSS into JS (for self-contained styling)
             inject: true,
-            // Still extract the CSS for those who want to import it directly
-            extract: "index.css",
+            extract: "dist/index.css",
             config: {
                 path: "./postcss.config.mjs",
                 ctx: {

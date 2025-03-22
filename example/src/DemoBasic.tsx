@@ -1,5 +1,7 @@
 import * as React from "react";
-import GanttChart, { Task, TaskGroup } from "react-modern-gantt";
+import { Task, TaskGroup } from "react-modern-gantt";
+import { GanttChart } from "react-modern-gantt";
+import "../../dist/dist/index.css";
 import { basicDemoData } from "./data";
 
 interface DemoBasicProps {

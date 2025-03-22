@@ -1,4 +1,3 @@
-// File: rollup.config.js
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
@@ -7,20 +6,14 @@ import terser from "@rollup/plugin-terser";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import autoprefixer from "autoprefixer";
 import { createFilter } from "@rollup/pluginutils";
-import pkg from "./package.json" assert { type: "json" };
 
-// Process "use client" directive for Next.js components
+// Process "use client" directive für Next.js components
 const useClientDirectivePlugin = {
     name: "replace-use-client",
     transform(code, id) {
-        // Only apply to .tsx and .ts files
         const filter = createFilter(["**/*.ts", "**/*.tsx"]);
         if (!filter(id)) return null;
-
-        // If the file doesn't include 'use client', return null (no transformation needed)
         if (!code.includes('"use client"') && !code.includes("'use client'")) return null;
-
-        // Replace the directive
         return {
             code: code.replace(/'use client';?\s*|"use client";?\s*/g, ""),
             map: { mappings: "" },
@@ -28,7 +21,7 @@ const useClientDirectivePlugin = {
     },
 };
 
-// Define all inputs in one bundle to ensure TypeScript types are generated correctly
+// Einfache Lösung: Ein Rollup-Build für alle Komponenten
 export default {
     input: {
         index: "src/index.ts",
@@ -41,7 +34,6 @@ export default {
             exports: "named",
             sourcemap: true,
             entryFileNames: "[name].js",
-            preserveModules: false,
         },
         {
             dir: "dist",
@@ -49,7 +41,6 @@ export default {
             exports: "named",
             sourcemap: true,
             entryFileNames: "[name].esm.js",
-            preserveModules: false,
         },
     ],
     plugins: [
@@ -59,25 +50,15 @@ export default {
         useClientDirectivePlugin,
         typescript({
             tsconfig: "./tsconfig.json",
-            exclude: ["**/__tests__/**", "**/examples/**", "**/example/**"],
-            compilerOptions: {
-                rootDir: "./src",
-                declaration: true,
-                declarationDir: "dist",
-            },
+            noEmitOnError: true,
+            declaration: false,
         }),
         postcss({
             plugins: [autoprefixer()],
             minimize: true,
             modules: false,
             inject: true,
-            extract: "dist/index.css",
-            config: {
-                path: "./postcss.config.mjs",
-                ctx: {
-                    env: "production",
-                },
-            },
+            extract: false,
         }),
         terser(),
     ],

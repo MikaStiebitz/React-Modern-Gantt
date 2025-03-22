@@ -47,7 +47,6 @@ yarn add react-modern-gantt
 
 ```jsx
 import GanttChart from "react-modern-gantt";
-import "react-modern-gantt/dist/index.css"; // Import styles if not using Tailwind
 
 function MyApp() {
     const tasks = [
@@ -86,7 +85,6 @@ function MyApp() {
 "use client";
 
 import { NextGanttChart } from "react-modern-gantt/nextjs";
-import "react-modern-gantt/dist/index.css"; // Import styles if not using Tailwind
 
 export default function GanttPage() {
     const tasks = [
@@ -109,7 +107,6 @@ export default function GanttPage() {
 ```jsx
 // Standard GanttChart component
 import { GanttChart } from "react-modern-gantt";
-import "react-modern-gantt/dist/index.css";
 
 // Full import with all utilities
 import { GanttChart, ViewMode, TaskService, CollisionService } from "react-modern-gantt";

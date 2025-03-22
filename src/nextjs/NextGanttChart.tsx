@@ -1,9 +1,9 @@
 "use client"; // This directive tells Next.js this is a client component
 
 import React from "react";
-import { GanttChart } from "../components/core";
+// Import aus dem Kern-Export
+import { GanttChart, GanttThemeProvider } from "../components/core";
 import { GanttChartProps } from "../types";
-import { GanttThemeProvider } from "../components/core/GanttThemeProvider";
 
 /**
  * NextGanttChart - Specialized version for Next.js applications

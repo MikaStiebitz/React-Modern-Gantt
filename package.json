@@ -1,6 +1,6 @@
 {
     "name": "react-modern-gantt",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "A modern, customizable Gantt chart component for React applications",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",

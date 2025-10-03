@@ -14,6 +14,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
   totalMonths,
   monthWidth,
   editMode = true,
+  allowProgressEdit = true,
+  allowTaskResize = true,
+  allowTaskMove = true,
   showProgress = false,
   className = '',
   tooltipClassName = '',
@@ -26,6 +29,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
   smoothDragging = true,
   movementThreshold = 3,
   animationSpeed = 0.25,
+  infiniteScroll = false,
+  onTimelineExtend,
   renderTask,
   renderTooltip,
   getTaskColor,
@@ -266,7 +271,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
   };
 
-  // Start auto-scrolling
+  // Start auto-scrolling with infinite scroll support
   const startAutoScroll = () => {
     if (autoScrollActive.current) return;
 
@@ -286,8 +291,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
       if (direction === 'left') {
-        // Don't scroll past the beginning
+        // Check if we're at the beginning and should extend timeline
         if (currentScrollLeft <= 0) {
+          if (infiniteScroll && onTimelineExtend) {
+            // Trigger timeline extension to the left
+            onTimelineExtend('left');
+            stopAutoScroll();
+            return;
+          }
           stopAutoScroll();
           return;
         }
@@ -301,8 +312,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
           targetPositionRef.current.left = newLeft;
         }
       } else if (direction === 'right') {
-        // Don't scroll past the end
+        // Check if we're at the end and should extend timeline
         if (currentScrollLeft >= maxScrollLeft) {
+          if (infiniteScroll && onTimelineExtend) {
+            // Trigger timeline extension to the right
+            onTimelineExtend('right');
+            stopAutoScroll();
+            return;
+          }
           stopAutoScroll();
           return;
         }
@@ -734,6 +751,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
                   isHovered={isHovered}
                   isDragging={isDragging}
                   editMode={editMode}
+                  allowProgressEdit={allowProgressEdit}
+                  allowTaskResize={allowTaskResize}
+                  allowTaskMove={allowTaskMove}
                   showProgress={showProgress}
                   instanceId={instanceId.current}
                   onMouseDown={handleMouseDown}

@@ -19,7 +19,10 @@ const GanttChart: React.FC<GanttChartProps> = ({
   currentDate = new Date(),
   showCurrentDateMarker = true,
   todayLabel = 'Today',
-  editMode = true,
+  editMode = true, // Global master switch - default true
+  allowProgressEdit = true, // Default true
+  allowTaskResize = true, // Default true
+  allowTaskMove = true, // Default true
   headerLabel = 'Resources',
   showProgress = false,
   darkMode = false,
@@ -31,6 +34,10 @@ const GanttChart: React.FC<GanttChartProps> = ({
   movementThreshold = 3,
   animationSpeed = 0.25,
   minuteStep = 5, // Default to 5-minute intervals
+
+  // NEW: Infinite scroll
+  infiniteScroll = false,
+  onTimelineExtend,
 
   // Custom rendering functions
   renderTaskList,
@@ -68,6 +75,89 @@ const GanttChart: React.FC<GanttChartProps> = ({
   const derivedStartDate = customStartDate || findEarliestDate(tasks);
   const derivedEndDate = customEndDate || findLatestDate(tasks);
 
+  // NEW: Infinite scroll - extend timeline when needed
+  const handleTimelineExtension = (direction: 'left' | 'right') => {
+    if (!infiniteScroll || !onTimelineExtend) return;
+
+    const extensionAmount = getExtensionAmount(activeViewMode);
+    let newStartDate = derivedStartDate;
+    let newEndDate = derivedEndDate;
+
+    if (direction === 'left') {
+      newStartDate = subtractTimeUnits(derivedStartDate, extensionAmount, activeViewMode);
+    } else {
+      newEndDate = addTimeUnits(derivedEndDate, extensionAmount, activeViewMode);
+    }
+
+    onTimelineExtend(direction, newStartDate, newEndDate);
+  };
+
+  // Helper to get extension amount based on view mode
+  const getExtensionAmount = (mode: ViewMode): number => {
+    switch (mode) {
+      case ViewMode.MINUTE:
+        return 60; // Add 1 hour
+      case ViewMode.HOUR:
+        return 24; // Add 1 day
+      case ViewMode.DAY:
+        return 7; // Add 1 week
+      case ViewMode.WEEK:
+        return 4; // Add 1 month
+      case ViewMode.MONTH:
+        return 3; // Add 3 months
+      case ViewMode.QUARTER:
+        return 4; // Add 1 year
+      case ViewMode.YEAR:
+        return 5; // Add 5 years
+      default:
+        return 3;
+    }
+  };
+
+  // Helper to add time units
+  const addTimeUnits = (date: Date, amount: number, mode: ViewMode): Date => {
+    switch (mode) {
+      case ViewMode.MINUTE:
+        return addMinutes(date, amount);
+      case ViewMode.HOUR:
+        return addHours(date, amount);
+      case ViewMode.DAY:
+        return addDays(date, amount);
+      case ViewMode.WEEK:
+        return addDays(date, amount * 7);
+      case ViewMode.MONTH:
+        return new Date(date.getFullYear(), date.getMonth() + amount, date.getDate());
+      case ViewMode.QUARTER:
+        return addQuarters(date, amount);
+      case ViewMode.YEAR:
+        return addYears(date, amount);
+      default:
+        return date;
+    }
+  };
+
+  // Helper to subtract time units
+  const subtractTimeUnits = (date: Date, amount: number, mode: ViewMode): Date => {
+    switch (mode) {
+      case ViewMode.MINUTE:
+        return addMinutes(date, -amount);
+      case ViewMode.HOUR:
+        return addHours(date, -amount);
+      case ViewMode.DAY:
+        return addDays(date, -amount);
+      case ViewMode.WEEK:
+        return addDays(date, -amount * 7);
+      case ViewMode.MONTH:
+        return new Date(date.getFullYear(), date.getMonth() - amount, date.getDate());
+      case ViewMode.QUARTER:
+        return addQuarters(date, -amount);
+      case ViewMode.YEAR:
+        return addYears(date, -amount);
+      default:
+        return date;
+    }
+  };
+
   // Time unit calculation functions
   const getTimeUnits = () => {
     switch (activeViewMode) {
@@ -90,7 +180,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
     }
   };
 
-  // Get minutes between dates with configurable step
+  // Get minutes between dates with configurable step - OPTIMIZED for performance
   const getMinutesBetween = (start: Date, end: Date, step: number = 5): Date[] => {
     const minutes: Date[] = [];
     let currentDate = new Date(start);
@@ -104,9 +194,22 @@ const GanttChart: React.FC<GanttChartProps> = ({
     const endDateAdjusted = new Date(end);
     endDateAdjusted.setMinutes(endDateAdjusted.getMinutes(), 59, 999);
 
-    while (currentDate <= endDateAdjusted) {
+    // PERFORMANCE: Limit minute view to max 500 intervals to prevent lag
+    const maxIntervals = 500;
+    let intervalCount = 0;
+
+    while (currentDate <= endDateAdjusted && intervalCount < maxIntervals) {
       minutes.push(new Date(currentDate));
       currentDate = addMinutes(currentDate, step);
+      intervalCount++;
+    }
+
+    // If we hit the limit, warn and show reduced view
+    if (intervalCount >= maxIntervals) {
+      console.warn(
+        `Minute view limited to ${maxIntervals} intervals for performance. ` +
+          `Consider using a larger time range or switching to Hour view.`
+      );
     }
 
     return minutes;
@@ -515,6 +618,9 @@ const GanttChart: React.FC<GanttChartProps> = ({
                     totalMonths={totalUnits}
                     monthWidth={viewUnitWidth}
                     editMode={editMode}
+                    allowProgressEdit={allowProgressEdit}
+                    allowTaskResize={allowTaskResize}
+                    allowTaskMove={allowTaskMove}
                     showProgress={showProgress}
                     onTaskUpdate={handleTaskUpdate}
                     onTaskClick={handleTaskClick}
@@ -527,6 +633,8 @@ const GanttChart: React.FC<GanttChartProps> = ({
                     smoothDragging={smoothDragging}
                     movementThreshold={movementThreshold}
                     animationSpeed={animationSpeed}
+                    infiniteScroll={infiniteScroll}
+                    onTimelineExtend={handleTimelineExtension}
                     renderTask={renderTask}
                     renderTooltip={renderTooltip}
                     getTaskColor={getTaskColor}

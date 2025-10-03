@@ -12,6 +12,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
   isHovered,
   isDragging,
   editMode,
+  allowProgressEdit = true,
+  allowTaskResize = true,
+  allowTaskMove = true,
   showProgress = false,
   instanceId,
   renderTask,
@@ -22,8 +25,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onClick,
   onProgressUpdate,
 }) => {
-  // Show handles only when hovered or dragging and in edit mode
-  const showHandles = (isHovered || isDragging) && editMode;
+  // Show resize handles only when hovered or dragging, in edit mode, AND resizing is allowed
+  const showResizeHandles = (isHovered || isDragging) && editMode && allowTaskResize;
+
+  // Progress editing requires: editMode=true, showProgress=true, AND allowProgressEdit=true
+  const canEditProgress = editMode && showProgress && allowProgressEdit;
+
+  // Task movement requires: editMode=true AND allowTaskMove=true
+  const canMoveTask = editMode && allowTaskMove;
   const taskRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [isDraggingProgress, setIsDraggingProgress] = useState(false);
@@ -48,21 +57,31 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   // Handle resize interactions
   const handleResizeLeft = (e: React.MouseEvent) => {
+    if (!allowTaskResize) return; // Check if resizing is allowed
     e.stopPropagation();
     onMouseDown(e, task, 'resize-left');
   };
 
   const handleResizeRight = (e: React.MouseEvent) => {
+    if (!allowTaskResize) return; // Check if resizing is allowed
     e.stopPropagation();
     onMouseDown(e, task, 'resize-right');
   };
 
-  // Progress bubble drag handlers with improved smoothness
-  const handleProgressMouseDown = (e: React.MouseEvent) => {
-    if (!editMode || !showProgress) return;
+  // Handle task movement
+  const handleTaskMouseDown = (e: React.MouseEvent) => {
+    if (!canMoveTask) return; // Check if movement is allowed
+    onMouseDown(e, task, 'move');
+  };
 
+  // Progress bubble drag handlers with improved smoothness and separated from task drag
+  const handleProgressMouseDown = (e: React.MouseEvent) => {
+    if (!canEditProgress) return; // Check if progress editing is allowed
+
+    // CRITICAL: Stop all propagation to prevent task drag
     e.stopPropagation();
     e.preventDefault();
+    e.nativeEvent.stopImmediatePropagation();
 
     setIsDraggingProgress(true);
     setShowProgressTooltip(true);
@@ -72,62 +91,63 @@ const TaskItem: React.FC<TaskItemProps> = ({
       progressBarRef.current.style.transition = 'width 0.05s ease-out';
     }
 
-    // Add global event listeners
-    document.addEventListener('mousemove', handleProgressMouseMove);
-    document.addEventListener('mouseup', handleProgressMouseUp);
-  };
+    // Store initial mouse position to ensure we have valid task reference
+    const taskElement = taskRef.current;
+    if (!taskElement) return;
 
-  const handleProgressMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDraggingProgress || !taskRef.current) return;
+    let currentPercent = progressPercent;
+
+    // Add global event listeners with high priority - INLINE to avoid closure issues
+    const handleMove = (ev: MouseEvent) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+
+      if (!taskElement) return;
 
       // Get progress bar bounds
-      const taskRect = taskRef.current.getBoundingClientRect();
+      const taskRect = taskElement.getBoundingClientRect();
 
       // Calculate new progress percentage based on mouse position
       const barWidth = taskRect.width - 2; // Account for 1px padding on each side
-      const clickX = Math.max(0, Math.min(barWidth, e.clientX - taskRect.left));
+      const clickX = Math.max(0, Math.min(barWidth, ev.clientX - taskRect.left));
       const newPercent = Math.round((clickX / barWidth) * 100);
 
       // Update progress value with constraints
-      setProgressPercent(Math.max(0, Math.min(100, newPercent)));
-    },
-    [isDraggingProgress]
-  );
+      currentPercent = Math.max(0, Math.min(100, newPercent));
+      setProgressPercent(currentPercent);
+    };
 
-  const handleProgressMouseUp = useCallback(() => {
-    if (!isDraggingProgress) return;
+    const handleUp = (ev: MouseEvent) => {
+      ev.stopPropagation();
+      ev.preventDefault();
 
-    setIsDraggingProgress(false);
-    setShowProgressTooltip(false);
+      setIsDraggingProgress(false);
+      setShowProgressTooltip(false);
 
-    // Remove global event listeners
-    document.removeEventListener('mousemove', handleProgressMouseMove);
-    document.removeEventListener('mouseup', handleProgressMouseUp);
+      // Remove event listeners
+      document.removeEventListener('mousemove', handleMove, true);
+      document.removeEventListener('mouseup', handleUp, true);
 
-    // Reset transition after update for normal behavior
-    if (progressBarRef.current) {
-      progressBarRef.current.style.transition = '';
-    }
+      // Reset transition after update for normal behavior
+      if (progressBarRef.current) {
+        progressBarRef.current.style.transition = '';
+      }
 
-    // Call update handler with the updated progress
-    if (onProgressUpdate && progressPercent !== task.percent) {
-      onProgressUpdate(task, progressPercent);
-    }
-  }, [isDraggingProgress, onProgressUpdate, progressPercent, task]);
+      // Call update handler with the final progress value
+      if (onProgressUpdate && currentPercent !== task.percent) {
+        onProgressUpdate(task, currentPercent);
+      }
+    };
+
+    // Use capture phase to intercept before task handlers
+    document.addEventListener('mousemove', handleMove, true);
+    document.addEventListener('mouseup', handleUp, true);
+  };
 
   // Update progress state when task changes
   useEffect(() => {
     setProgressPercent(task.percent || 0);
   }, [task.percent]);
-
-  // Clean up event listeners on unmount
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleProgressMouseMove);
-      document.removeEventListener('mouseup', handleProgressMouseUp);
-    };
-  }, [handleProgressMouseMove, handleProgressMouseUp]);
 
   // Use custom render function if provided
   if (renderTask) {
@@ -153,7 +173,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           top: `${topPx}px`,
         }}
         onClick={e => onClick(e, task)}
-        onMouseDown={e => onMouseDown(e, task, 'move')}
+        onMouseDown={canMoveTask ? handleTaskMouseDown : undefined}
         onMouseEnter={e => onMouseEnter(e, task)}
         onMouseLeave={onMouseLeave}
         data-testid={`task-${task.id}`}
@@ -168,13 +188,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   // Inline styles based on received task colors
   const taskStyles: React.CSSProperties = {
-    left: `${Math.max(0, leftPx)}px`,
-    width: `${Math.max(20, widthPx)}px`,
+    left: `${leftPx}px`,
     top: `${topPx}px`,
-    willChange: isDragging ? 'transform, left, width' : 'auto',
-    backgroundColor:
-      backgroundColor.startsWith('var(') || backgroundColor.startsWith('#') ? backgroundColor : `var(--rmg-task-color)`,
-    color: textColor.startsWith('var(') || textColor.startsWith('#') ? textColor : `var(--rmg-task-text-color)`,
+    width: `${widthPx}px`,
+    backgroundColor: task.color || 'var(--rmg-task-bg)',
+    cursor: isDragging ? 'grabbing' : canMoveTask ? 'grab' : 'default',
   };
 
   if (borderColor) {
@@ -189,7 +207,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       className={`rmg-task-item ${isDragging ? 'rmg-task-item-dragging' : ''}`}
       style={taskStyles}
       onClick={e => onClick(e, task)}
-      onMouseDown={e => onMouseDown(e, task, 'move')}
+      onMouseDown={canMoveTask ? handleTaskMouseDown : undefined}
       onMouseEnter={e => onMouseEnter(e, task)}
       onMouseLeave={onMouseLeave}
       data-testid={`task-${task.id}`}
@@ -198,12 +216,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
       data-dragging={isDragging ? 'true' : 'false'}
       data-rmg-component="task">
       {/* Left resize handle */}
-      {showHandles && (
+      {showResizeHandles && (
         <div
           className="rmg-resize-handle rmg-resize-handle-left"
           onMouseDown={handleResizeLeft}
           data-rmg-component="resize-handle"
           data-rmg-handle="left"
+          style={{ cursor: 'ew-resize' }}
         />
       )}
 
@@ -216,7 +235,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           ref={progressBarRef}
           className="rmg-progress-bar"
           onClick={e => {
-            if (editMode && showProgress && onProgressUpdate) {
+            if (canEditProgress && onProgressUpdate) {
               e.stopPropagation();
               const barWidth = e.currentTarget.clientWidth;
               const clickX = e.nativeEvent.offsetX;
@@ -233,16 +252,22 @@ const TaskItem: React.FC<TaskItemProps> = ({
               transition: isDraggingProgress ? 'none' : 'width 0.3s ease-out',
             }}
             data-rmg-component="progress-fill">
-            {/* Progress bubble handle */}
-            {editMode && (isHovered || isDraggingProgress) && (
+            {/* Progress bubble handle - IMPROVED: Better visibility and positioning */}
+            {canEditProgress && (isHovered || isDraggingProgress) && (
               <>
                 <div
                   className={`rmg-progress-handle ${isDraggingProgress ? 'rmg-progress-handle-dragging' : ''}`}
                   onMouseDown={handleProgressMouseDown}
+                  style={{
+                    cursor: 'ew-resize',
+                    pointerEvents: 'auto',
+                    zIndex: 1000,
+                  }}
+                  title="Drag to adjust progress"
                   data-rmg-component="progress-handle"
                 />
                 {/* Progress percentage tooltip */}
-                {showProgressTooltip && isDraggingProgress && (
+                {(showProgressTooltip || isDraggingProgress) && (
                   <div className="rmg-progress-tooltip" data-rmg-component="progress-tooltip">
                     {progressPercent}%
                   </div>
@@ -254,12 +279,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
       )}
 
       {/* Right resize handle */}
-      {showHandles && (
+      {showResizeHandles && (
         <div
           className="rmg-resize-handle rmg-resize-handle-right"
           onMouseDown={handleResizeRight}
           data-rmg-component="resize-handle"
           data-rmg-handle="right"
+          style={{ cursor: 'ew-resize' }}
         />
       )}
     </div>

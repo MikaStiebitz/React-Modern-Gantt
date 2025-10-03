@@ -7,707 +7,767 @@
    1. Basis-Variablen (Light Mode)
    ====================================================== */
 :root {
-    /* Basis-Farben */
-    --rmg-white: #ffffff;
-    --rmg-black: #000000;
+  /* Basis-Farben */
+  --rmg-white: #ffffff;
+  --rmg-black: #000000;
 
-    /* Grautöne */
-    --rmg-gray-50: #f9fafb;
-    --rmg-gray-100: #f3f4f6;
-    --rmg-gray-200: #e5e7eb;
-    --rmg-gray-300: #d1d5db;
-    --rmg-gray-400: #9ca3af;
-    --rmg-gray-500: #6b7280;
-    --rmg-gray-600: #4b5563;
-    --rmg-gray-700: #374151;
-    --rmg-gray-800: #1f2937;
-    --rmg-gray-900: #111827;
+  /* Grautöne */
+  --rmg-gray-50: #f9fafb;
+  --rmg-gray-100: #f3f4f6;
+  --rmg-gray-200: #e5e7eb;
+  --rmg-gray-300: #d1d5db;
+  --rmg-gray-400: #9ca3af;
+  --rmg-gray-500: #6b7280;
+  --rmg-gray-600: #4b5563;
+  --rmg-gray-700: #374151;
+  --rmg-gray-800: #1f2937;
+  --rmg-gray-900: #111827;
 
-    /* Farbpalette */
-    --rmg-blue-50: #eff6ff;
-    --rmg-blue-100: #dbeafe;
-    --rmg-blue-500: #3b82f6;
-    --rmg-blue-600: #2563eb;
-    --rmg-blue-700: #1d4ed8;
-    --rmg-red-500: #ef4444;
-    --rmg-indigo-500: #6366f1;
-    --rmg-indigo-600: #4f46e5;
+  /* Farbpalette */
+  --rmg-blue-50: #eff6ff;
+  --rmg-blue-100: #dbeafe;
+  --rmg-blue-500: #3b82f6;
+  --rmg-blue-600: #2563eb;
+  --rmg-blue-700: #1d4ed8;
+  --rmg-red-500: #ef4444;
+  --rmg-indigo-500: #6366f1;
+  --rmg-indigo-600: #4f46e5;
 
-    /* Komponenten (Light Mode) */
-    --rmg-bg-color: var(--rmg-white);
-    --rmg-text-color: var(--rmg-gray-800);
-    --rmg-border-color: var(--rmg-gray-200);
-    --rmg-highlight-color: var(--rmg-blue-50);
-    --rmg-marker-color: var(--rmg-red-500);
-    --rmg-task-color: var(--rmg-blue-500);
-    --rmg-task-text-color: var(--rmg-white);
+  /* Komponenten (Light Mode) */
+  --rmg-bg-color: var(--rmg-white);
+  --rmg-text-color: var(--rmg-gray-800);
+  --rmg-border-color: var(--rmg-gray-200);
+  --rmg-highlight-color: var(--rmg-blue-50);
+  --rmg-marker-color: var(--rmg-red-500);
+  --rmg-task-color: var(--rmg-blue-500);
+  --rmg-task-text-color: var(--rmg-white);
 
-    /* UI-Elemente */
-    --rmg-tooltip-bg: var(--rmg-white);
-    --rmg-tooltip-text: var(--rmg-gray-800);
-    --rmg-tooltip-border: var(--rmg-gray-200);
-    --rmg-resize-handle-bg: rgba(255, 255, 255, 0.3);
-    --rmg-progress-bg: rgba(0, 0, 0, 0.2);
-    --rmg-progress-fill: var(--rmg-white);
+  /* UI-Elemente */
+  --rmg-tooltip-bg: var(--rmg-white);
+  --rmg-tooltip-text: var(--rmg-gray-800);
+  --rmg-tooltip-border: var(--rmg-gray-200);
+  --rmg-resize-handle-bg: rgba(255, 255, 255, 0.3);
+  --rmg-progress-bg: rgba(0, 0, 0, 0.2);
+  --rmg-progress-fill: var(--rmg-white);
 
-    /* Schatten */
-    --rmg-shadow-color: rgba(0, 0, 0, 0.1);
-    --rmg-shadow-hover: rgba(0, 0, 0, 0.2);
-    --rmg-shadow-drag: rgba(0, 0, 0, 0.3);
+  /* Schatten */
+  --rmg-shadow-color: rgba(0, 0, 0, 0.1);
+  --rmg-shadow-hover: rgba(0, 0, 0, 0.2);
+  --rmg-shadow-drag: rgba(0, 0, 0, 0.3);
 
-    /* Scrollbar */
-    --rmg-scrollbar-track: rgba(229, 231, 235, 0.3);
-    --rmg-scrollbar-thumb: rgba(156, 163, 175, 0.5);
-    --rmg-scrollbar-thumb-hover: rgba(107, 114, 128, 0.7);
-    --rmg-scrollbar-size: 8px;
+  /* Scrollbar */
+  --rmg-scrollbar-track: rgba(229, 231, 235, 0.3);
+  --rmg-scrollbar-thumb: rgba(156, 163, 175, 0.5);
+  --rmg-scrollbar-thumb-hover: rgba(107, 114, 128, 0.7);
+  --rmg-scrollbar-size: 8px;
 
-    /* Animationen */
-    --rmg-animation-speed: 0.25;
-    --rmg-transition-fast: 150ms ease;
-    --rmg-transition-normal: 250ms ease;
+  /* Animationen */
+  --rmg-animation-speed: 0.25;
+  --rmg-transition-fast: 150ms ease;
+  --rmg-transition-normal: 250ms ease;
 
-    /* Layout */
-    --rmg-row-height: 40px;
-    --rmg-header-height: 40px;
-    --rmg-task-height: 32px;
-    --rmg-border-radius: 8px;
-    --rmg-task-border-radius: 4px;
+  /* Layout */
+  --rmg-row-height: 40px;
+  --rmg-header-height: 40px;
+  --rmg-task-height: 32px;
+  --rmg-border-radius: 8px;
+  --rmg-task-border-radius: 4px;
 }
 
 /* ======================================================
    2. Dark Mode Variablen
    ====================================================== */
 .rmg-dark {
-    --rmg-bg-color: var(--rmg-gray-800);
-    --rmg-text-color: var(--rmg-gray-100);
-    --rmg-border-color: var(--rmg-gray-700);
-    --rmg-highlight-color: var(--rmg-gray-700);
-    --rmg-task-color: var(--rmg-indigo-600);
+  --rmg-bg-color: var(--rmg-gray-800);
+  --rmg-text-color: var(--rmg-gray-100);
+  --rmg-border-color: var(--rmg-gray-700);
+  --rmg-highlight-color: var(--rmg-gray-700);
+  --rmg-task-color: var(--rmg-indigo-600);
 
-    --rmg-tooltip-bg: var(--rmg-gray-800);
-    --rmg-tooltip-text: var(--rmg-gray-100);
-    --rmg-tooltip-border: var(--rmg-gray-700);
-    --rmg-resize-handle-bg: rgba(255, 255, 255, 0.4);
-    --rmg-progress-bg: rgba(255, 255, 255, 0.3);
-    --rmg-progress-fill: var(--rmg-gray-200);
+  --rmg-tooltip-bg: var(--rmg-gray-800);
+  --rmg-tooltip-text: var(--rmg-gray-100);
+  --rmg-tooltip-border: var(--rmg-gray-700);
+  --rmg-resize-handle-bg: rgba(255, 255, 255, 0.4);
+  --rmg-progress-bg: rgba(255, 255, 255, 0.3);
+  --rmg-progress-fill: var(--rmg-gray-200);
 
-    --rmg-shadow-color: rgba(0, 0, 0, 0.3);
-    --rmg-shadow-hover: rgba(0, 0, 0, 0.4);
-    --rmg-shadow-drag: rgba(0, 0, 0, 0.5);
+  --rmg-shadow-color: rgba(0, 0, 0, 0.3);
+  --rmg-shadow-hover: rgba(0, 0, 0, 0.4);
+  --rmg-shadow-drag: rgba(0, 0, 0, 0.5);
 
-    --rmg-scrollbar-track: rgba(55, 65, 81, 0.3);
-    --rmg-scrollbar-thumb: rgba(75, 85, 99, 0.5);
-    --rmg-scrollbar-thumb-hover: rgba(107, 114, 128, 0.7);
+  --rmg-scrollbar-track: rgba(55, 65, 81, 0.3);
+  --rmg-scrollbar-thumb: rgba(75, 85, 99, 0.5);
+  --rmg-scrollbar-thumb-hover: rgba(107, 114, 128, 0.7);
 }
 
 /* ======================================================
    3. Hauptcontainer
    ====================================================== */
 .rmg-gantt-chart {
-    width: 100%;
-    border: 1px solid var(--rmg-border-color);
-    border-radius: var(--rmg-border-radius);
-    background-color: var(--rmg-bg-color);
-    color: var(--rmg-text-color);
-    box-shadow:
-        0 1px 3px 0 var(--rmg-shadow-color),
-        0 1px 2px 0 var(--rmg-shadow-color);
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  border: 1px solid var(--rmg-border-color);
+  border-radius: var(--rmg-border-radius);
+  background-color: var(--rmg-bg-color);
+  color: var(--rmg-text-color);
+  box-shadow:
+    0 1px 3px 0 var(--rmg-shadow-color),
+    0 1px 2px 0 var(--rmg-shadow-color);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .rmg-container {
-    display: flex;
-    position: relative;
+  display: flex;
+  position: relative;
 }
 
 /* ======================================================
    4. Header und Titel
    ====================================================== */
 .rmg-header {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--rmg-border-color);
-    background-color: var(--rmg-bg-color);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--rmg-border-color);
+  background-color: var(--rmg-bg-color);
 }
 
 .rmg-header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .rmg-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--rmg-text-color);
-    margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--rmg-text-color);
+  margin: 0;
 }
 
 .rmg-view-mode-wrapper {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 /* ======================================================
    5. Aufgabenliste (Sidebar)
    ====================================================== */
 .rmg-task-list {
-    width: 160px;
-    flex-shrink: 0;
-    background-color: var(--rmg-bg-color);
-    border-right: 1px solid var(--rmg-border-color);
-    overflow-y: auto;
-    z-index: 10;
+  width: 160px;
+  flex-shrink: 0;
+  background-color: var(--rmg-bg-color);
+  border-right: 1px solid var(--rmg-border-color);
+  overflow-y: auto;
+  z-index: 10;
 }
 
 .rmg-task-list-header {
-    padding: 8px;
-    font-weight: 600;
-    border-bottom: 1px solid var(--rmg-border-color);
-    height: var(--rmg-header-height);
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
+  padding: 8px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--rmg-border-color);
+  height: var(--rmg-header-height);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  transition: height 0.2s ease;
+}
+
+/* Höherer Header für Minute/Hour/Day/Week View mit doppelten Timeline-Headern */
+.rmg-gantt-chart[data-view-mode='minute'] .rmg-task-list-header,
+.rmg-gantt-chart[data-view-mode='hour'] .rmg-task-list-header,
+.rmg-gantt-chart[data-view-mode='day'] .rmg-task-list-header,
+.rmg-gantt-chart[data-view-mode='week'] .rmg-task-list-header {
+  height: calc(var(--rmg-header-height) * 2 + 2px);
 }
 
 .rmg-task-group {
-    padding: 8px;
-    border-bottom: 1px solid var(--rmg-border-color);
-    background-color: var(--rmg-bg-color);
-    cursor: pointer;
-    transition: background-color 0.15s ease;
+  padding: 8px;
+  border-bottom: 1px solid var(--rmg-border-color);
+  background-color: var(--rmg-bg-color);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .rmg-task-group:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .rmg-dark .rmg-task-group:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .rmg-task-group-name {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rmg-task-group-description {
-    font-size: 0.75rem;
-    color: var(--rmg-gray-500);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--rmg-gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 4px;
 }
 
 .rmg-dark .rmg-task-group-description {
-    color: var(--rmg-gray-400);
+  color: var(--rmg-gray-400);
 }
 
 /* ======================================================
    6. Timeline und Grid
    ====================================================== */
 .rmg-timeline-container {
-    flex-grow: 1;
-    overflow-x: auto;
-    position: relative;
-    background-color: var(--rmg-bg-color);
+  flex-grow: 1;
+  overflow-x: auto;
+  position: relative;
+  background-color: var(--rmg-bg-color);
 }
 
 .rmg-timeline {
-    min-width: max-content;
+  min-width: max-content;
+}
+
+.rmg-timeline-content {
+  position: relative;
+  min-width: max-content;
 }
 
 .rmg-timeline-header,
 .rmg-timeline-header-higher {
-    display: flex;
-    border-bottom: 1px solid var(--rmg-border-color);
-    background-color: var(--rmg-bg-color);
+  display: flex;
+  border-bottom: 1px solid var(--rmg-border-color);
+  background-color: var(--rmg-bg-color);
+  min-height: var(--rmg-header-height);
 }
 
 .rmg-timeline-unit {
-    flex-shrink: 0;
-    padding: 8px 4px;
-    font-weight: 600;
-    text-align: center;
-    border-right: 1px solid var(--rmg-border-color);
-    height: var(--rmg-header-height);
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  flex-shrink: 0;
+  padding: 8px 4px;
+  font-weight: 600;
+  text-align: center;
+  border-right: 1px solid var(--rmg-border-color);
+  height: var(--rmg-header-height);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .rmg-timeline-unit:last-child {
-    border-right: none;
+  border-right: none;
 }
 
 .rmg-timeline-unit-current {
-    background-color: var(--rmg-highlight-color);
+  background-color: var(--rmg-highlight-color);
 }
 
 .rmg-timeline-grid {
-    position: relative;
+  position: relative;
+  min-width: max-content;
+}
+
+/* Grid-Linien für Hour/Minute View */
+.rmg-timeline-grid[data-view-mode='minute'],
+.rmg-timeline-grid[data-view-mode='hour'] {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(var(--gantt-unit-width) - 1px),
+    var(--rmg-border-color) calc(var(--gantt-unit-width) - 1px),
+    var(--rmg-border-color) var(--gantt-unit-width)
+  );
 }
 
 .rmg-task-row {
-    position: relative;
-    border-bottom: 1px solid var(--rmg-border-color);
-    background-color: var(--rmg-bg-color);
-    min-height: var(--rmg-row-height);
-    box-sizing: border-box;
+  position: relative;
+  border-bottom: 1px solid var(--rmg-border-color);
+  background-color: var(--rmg-bg-color);
+  min-height: var(--rmg-row-height);
+  box-sizing: border-box;
+  min-width: 100%;
 }
 
 /* Spezielle Minute und Hour View Styles */
-.rmg-timeline[data-view-mode="minute"] .rmg-timeline-unit,
-.rmg-timeline[data-view-mode="hour"] .rmg-timeline-unit {
-    font-size: 0.7rem;
-    padding: 4px 2px;
-    border-right: 1px dotted var(--rmg-border-color);
+.rmg-timeline[data-view-mode='minute'] .rmg-timeline-unit,
+.rmg-timeline[data-view-mode='hour'] .rmg-timeline-unit {
+  font-size: 0.7rem;
+  padding: 4px 2px;
+  border-right: 1px dotted var(--rmg-border-color);
 }
 
-.rmg-timeline[data-view-mode="minute"] .rmg-timeline-header-higher .rmg-timeline-unit,
-.rmg-timeline[data-view-mode="hour"] .rmg-timeline-header-higher .rmg-timeline-unit {
-    font-weight: 600;
-    background-color: rgba(0, 0, 0, 0.02);
+.rmg-timeline[data-view-mode='minute'] .rmg-timeline-header-higher .rmg-timeline-unit,
+.rmg-timeline[data-view-mode='hour'] .rmg-timeline-header-higher .rmg-timeline-unit {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
-.rmg-dark .rmg-timeline[data-view-mode="minute"] .rmg-timeline-header-higher .rmg-timeline-unit,
-.rmg-dark .rmg-timeline[data-view-mode="hour"] .rmg-timeline-header-higher .rmg-timeline-unit {
-    background-color: rgba(255, 255, 255, 0.02);
+.rmg-dark .rmg-timeline[data-view-mode='minute'] .rmg-timeline-header-higher .rmg-timeline-unit,
+.rmg-dark .rmg-timeline[data-view-mode='hour'] .rmg-timeline-header-higher .rmg-timeline-unit {
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
-.rmg-timeline[data-view-mode="minute"] .rmg-timeline-unit-current,
-.rmg-timeline[data-view-mode="hour"] .rmg-timeline-unit-current {
-    background-color: var(--rmg-highlight-color);
-    font-weight: 700;
+.rmg-timeline[data-view-mode='minute'] .rmg-timeline-unit-current,
+.rmg-timeline[data-view-mode='hour'] .rmg-timeline-unit-current {
+  background-color: var(--rmg-highlight-color);
+  font-weight: 700;
 }
 
-.rmg-timeline-grid[data-view-mode="minute"] .rmg-task-item,
-.rmg-timeline-grid[data-view-mode="hour"] .rmg-task-item {
-    height: 28px;
-    font-size: 0.75rem;
+.rmg-timeline-grid[data-view-mode='minute'] .rmg-task-item,
+.rmg-timeline-grid[data-view-mode='hour'] .rmg-task-item {
+  height: 28px;
+  font-size: 0.75rem;
 }
 
 /* ======================================================
    7. Aufgabenelemente
    ====================================================== */
 .rmg-task-item {
-    position: absolute;
-    height: var(--rmg-task-height);
-    background-color: var(--rmg-task-color);
-    border-radius: var(--rmg-task-border-radius);
-    color: var(--rmg-task-text-color);
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    font-weight: 500;
-    font-size: 0.875rem;
-    box-shadow: 0 1px 2px var(--rmg-shadow-color);
-    cursor: pointer;
-    transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
-    will-change: transform, box-shadow;
-    backface-visibility: hidden;
-    z-index: 1;
-    box-sizing: border-box;
-    overflow: hidden;
-    min-width: 20px;
+  position: absolute;
+  height: var(--rmg-task-height);
+  background-color: var(--rmg-task-color);
+  border-radius: var(--rmg-task-border-radius);
+  color: var(--rmg-task-text-color);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  box-shadow: 0 1px 2px var(--rmg-shadow-color);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+  z-index: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-width: 20px;
 }
 
 .rmg-task-item:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px var(--rmg-shadow-hover);
-    z-index: 20;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px var(--rmg-shadow-hover);
+  z-index: 20;
 }
 
 .rmg-task-item-dragging {
-    z-index: 100;
-    cursor: grabbing;
-    box-shadow: 0 5px 10px var(--rmg-shadow-drag);
-    opacity: 0.95;
+  z-index: 100;
+  cursor: grabbing;
+  box-shadow: 0 5px 10px var(--rmg-shadow-drag);
+  opacity: 0.95;
 }
 
 .rmg-task-item-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
-    user-select: none;
-    line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.2;
 }
 
 /* ======================================================
    8. Resize Handles
    ====================================================== */
 .rmg-resize-handle {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 8px;
-    background-color: var(--rmg-resize-handle-bg);
-    cursor: ew-resize;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 2;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background-color: var(--rmg-resize-handle-bg);
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
 }
 
 .rmg-resize-handle-left {
-    left: 0;
-    border-top-left-radius: var(--rmg-task-border-radius);
-    border-bottom-left-radius: var(--rmg-task-border-radius);
+  left: 0;
+  border-top-left-radius: var(--rmg-task-border-radius);
+  border-bottom-left-radius: var(--rmg-task-border-radius);
 }
 
 .rmg-resize-handle-right {
-    right: 0;
-    border-top-right-radius: var(--rmg-task-border-radius);
-    border-bottom-right-radius: var(--rmg-task-border-radius);
+  right: 0;
+  border-top-right-radius: var(--rmg-task-border-radius);
+  border-bottom-right-radius: var(--rmg-task-border-radius);
 }
 
 .rmg-task-item:hover .rmg-resize-handle {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* ======================================================
    9. Progress Bar
    ====================================================== */
 .rmg-progress-bar {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-    right: 4px;
-    height: 3px;
-    background-color: var(--rmg-progress-bg);
-    border-radius: 2px;
-    overflow: hidden;
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  background-color: var(--rmg-progress-bg);
+  border-radius: 2px;
+  overflow: hidden;
 }
 
 .rmg-progress-fill {
-    height: 100%;
-    background-color: var(--rmg-progress-fill);
-    border-radius: 2px;
-    transition: width 0.3s ease-out;
+  height: 100%;
+  background-color: var(--rmg-progress-fill);
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
 }
 
 .rmg-progress-handle {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translate(50%, -50%);
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: white;
-    border: 2px solid var(--rmg-task-color);
-    box-shadow: 0 1px 3px var(--rmg-shadow-color);
-    cursor: ew-resize;
-    opacity: 0;
-    transition:
-        opacity 0.2s ease,
-        transform 0.15s ease;
-    z-index: 10;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background-color: white;
+  border: 2px solid var(--rmg-task-color);
+  box-shadow: 0 1px 3px var(--rmg-shadow-color);
+  cursor: ew-resize;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+  z-index: 10;
 }
 
 .rmg-task-item:hover .rmg-progress-handle {
-    opacity: 1;
+  opacity: 1;
 }
 
 .rmg-progress-handle:hover,
 .rmg-progress-handle-dragging {
-    transform: translate(50%, -50%) scale(1.2);
-    box-shadow: 0 2px 5px var(--rmg-shadow-hover);
+  transform: translate(50%, -50%) scale(1.2);
+  box-shadow: 0 2px 5px var(--rmg-shadow-hover);
+}
+
+/* Progress Tooltip - shown when dragging progress handle */
+.rmg-progress-tooltip {
+  position: absolute;
+  right: 0;
+  top: -30px;
+  transform: translateX(50%);
+  background-color: var(--rmg-tooltip-bg);
+  color: var(--rmg-tooltip-text);
+  border: 1px solid var(--rmg-tooltip-border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px var(--rmg-shadow-color);
+  z-index: 1000;
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(50%) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(50%) translateY(0);
+  }
 }
 
 /* ======================================================
    10. Today Marker
    ====================================================== */
 .rmg-today-marker {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background-color: var(--rmg-marker-color);
-    z-index: 10;
-    box-shadow: 0 0 4px var(--rmg-marker-color);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--rmg-marker-color);
+  z-index: 10;
+  box-shadow: 0 0 4px var(--rmg-marker-color);
 }
 
 .rmg-today-marker-label {
-    position: absolute;
-    top: -16px;
-    left: 0;
-    transform: translateX(-50%);
-    background-color: var(--rmg-marker-color);
-    color: white;
-    padding: 2px 4px;
-    border-radius: 2px;
-    font-size: 0.625rem;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 1px 3px var(--rmg-shadow-color);
+  position: absolute;
+  top: -16px;
+  left: 0;
+  transform: translateX(-50%);
+  background-color: var(--rmg-marker-color);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px var(--rmg-shadow-color);
 }
 
 /* ======================================================
    11. Tooltip
    ====================================================== */
 .rmg-tooltip {
-    position: absolute;
-    z-index: 1000;
-    background-color: var(--rmg-tooltip-bg);
-    color: var(--rmg-tooltip-text);
-    border: 1px solid var(--rmg-tooltip-border);
-    border-radius: 4px;
-    padding: 8px;
-    font-size: 0.75rem;
-    box-shadow: 0 2px 8px var(--rmg-shadow-color);
-    opacity: 0;
-    transform: translateY(5px);
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-    pointer-events: none;
-    min-width: 12rem;
+  position: absolute;
+  z-index: 1000;
+  background-color: var(--rmg-tooltip-bg);
+  color: var(--rmg-tooltip-text);
+  border: 1px solid var(--rmg-tooltip-border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 8px var(--rmg-shadow-color);
+  opacity: 0;
+  transform: translateY(5px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+  min-width: 12rem;
 }
 
 .rmg-tooltip-visible {
-    opacity: 1;
-    transform: translateY(0);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .rmg-tooltip-title {
-    font-weight: bold;
-    margin-bottom: 4px;
+  font-weight: bold;
+  margin-bottom: 4px;
 }
 
 .rmg-tooltip-action {
-    font-size: 0.7rem;
-    color: var(--rmg-blue-500);
-    font-style: italic;
-    margin-bottom: 4px;
+  font-size: 0.7rem;
+  color: var(--rmg-blue-500);
+  font-style: italic;
+  margin-bottom: 4px;
 }
 
 .rmg-tooltip-content {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 4px 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
 }
 
 .rmg-tooltip-row {
-    display: contents;
+  display: contents;
 }
 
 .rmg-tooltip-label {
-    font-weight: 600;
-    color: var(--rmg-gray-500);
+  font-weight: 600;
+  color: var(--rmg-gray-500);
 }
 
 .rmg-dark .rmg-tooltip-label {
-    color: var(--rmg-gray-400);
+  color: var(--rmg-gray-400);
 }
 
 /* ======================================================
    12. View Mode Selector
    ====================================================== */
 .rmg-view-mode-selector {
-    display: inline-flex;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 9999px;
-    padding: 2px;
-    border: 1px solid var(--rmg-border-color);
-    overflow: hidden;
+  display: inline-flex;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 9999px;
+  padding: 2px;
+  border: 1px solid var(--rmg-border-color);
+  overflow: hidden;
 }
 
 .rmg-dark .rmg-view-mode-selector {
-    background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .rmg-view-mode-button {
-    border: none;
-    background: transparent;
-    color: var(--rmg-text-color);
-    padding: 4px 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border-radius: 9999px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  color: var(--rmg-text-color);
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .rmg-view-mode-button-active {
-    background-color: var(--rmg-blue-500);
-    color: white;
-    font-weight: 600;
+  background-color: var(--rmg-blue-500);
+  color: white;
+  font-weight: 600;
 }
 
 /* ======================================================
    13. Scrollbar Styling
    ====================================================== */
 .rmg-timeline-container {
-    /* Firefox scrollbar */
-    scrollbar-width: thin;
-    scrollbar-color: var(--rmg-scrollbar-thumb) var(--rmg-scrollbar-track);
-    scroll-behavior: smooth;
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--rmg-scrollbar-thumb) var(--rmg-scrollbar-track);
+  scroll-behavior: smooth;
 }
 
 /* Webkit-based browsers (Chrome, Safari, newer Edge) */
 .rmg-timeline-container::-webkit-scrollbar {
-    width: var(--rmg-scrollbar-size);
-    height: var(--rmg-scrollbar-size);
+  width: var(--rmg-scrollbar-size);
+  height: var(--rmg-scrollbar-size);
 }
 
 .rmg-timeline-container::-webkit-scrollbar-track {
-    background: var(--rmg-scrollbar-track);
-    border-radius: 12px;
-    margin: 0 6px; /* Add some space on the edges */
+  background: var(--rmg-scrollbar-track);
+  border-radius: 12px;
+  margin: 0 6px; /* Add some space on the edges */
 }
 
 .rmg-timeline-container::-webkit-scrollbar-thumb {
-    background-color: var(--rmg-scrollbar-thumb);
-    border-radius: 12px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-    min-height: 40px; /* Minimum height for better usability */
-    transition: background-color 0.2s ease;
+  background-color: var(--rmg-scrollbar-thumb);
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 40px; /* Minimum height for better usability */
+  transition: background-color 0.2s ease;
 }
 
 .rmg-timeline-container::-webkit-scrollbar-thumb:hover {
-    background-color: var(--rmg-scrollbar-thumb-hover);
+  background-color: var(--rmg-scrollbar-thumb-hover);
 }
 
 .rmg-timeline-container::-webkit-scrollbar-corner {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 /* Auto-Scrolling */
 .rmg-auto-scrolling {
-    scroll-behavior: auto !important;
+  scroll-behavior: auto !important;
 }
 
 /* Visual scrollable indicator */
 .rmg-timeline-container.rmg-scrollable-x::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 24px;
-    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03));
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.03));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .rmg-timeline-container.rmg-scrollable-x:hover::after {
-    opacity: 1;
+  opacity: 1;
 }
 
 .rmg-dark .rmg-timeline-container.rmg-scrollable-x::after {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
 }
 
 @media (max-width: 640px) {
-    .rmg-task-list {
-        width: 120px;
-    }
+  .rmg-task-list {
+    width: 120px;
+  }
 
-    .rmg-header {
-        padding: 12px;
-    }
+  .rmg-header {
+    padding: 12px;
+  }
 
-    .rmg-title {
-        font-size: 1.25rem;
-    }
+  .rmg-title {
+    font-size: 1.25rem;
+  }
 }
 
 /* ======================================================
    16. Utility-Klassen
    ====================================================== */
 .bg-blue-500 {
-    background-color: #3b82f6;
+  background-color: #3b82f6;
 }
 .bg-indigo-500 {
-    background-color: #6366f1;
+  background-color: #6366f1;
 }
 .bg-purple-500 {
-    background-color: #a855f7;
+  background-color: #a855f7;
 }
 .bg-green-500 {
-    background-color: #22c55e;
+  background-color: #22c55e;
 }
 .bg-emerald-500 {
-    background-color: #10b981;
+  background-color: #10b981;
 }
 .bg-amber-500 {
-    background-color: #f59e0b;
+  background-color: #f59e0b;
 }
 .bg-orange-500 {
-    background-color: #f97316;
+  background-color: #f97316;
 }
 .bg-red-500 {
-    background-color: #ef4444;
+  background-color: #ef4444;
 }
 .bg-teal-500 {
-    background-color: #14b8a6;
+  background-color: #14b8a6;
 }
 .bg-yellow-400 {
-    background-color: #facc15;
+  background-color: #facc15;
 }
 
 .bg-blue-600 {
-    background-color: #2563eb;
+  background-color: #2563eb;
 }
 .bg-indigo-600 {
-    background-color: #4f46e5;
+  background-color: #4f46e5;
 }
 .bg-green-600 {
-    background-color: #16a34a;
+  background-color: #16a34a;
 }
 .bg-emerald-600 {
-    background-color: #059669;
+  background-color: #059669;
 }
 .bg-amber-600 {
-    background-color: #d97706;
+  background-color: #d97706;
 }
 .bg-orange-600 {
-    background-color: #ea580c;
+  background-color: #ea580c;
 }
 .bg-red-600 {
-    background-color: #dc2626;
+  background-color: #dc2626;
 }
 .bg-teal-600 {
-    background-color: #0d9488;
+  background-color: #0d9488;
 }
 
 .text-white {
-    color: #ffffff;
+  color: #ffffff;
 }
 .text-gray-900 {
-    color: #111827;
+  color: #111827;
 }
 
 .border-blue-700 {
-    border-color: #1d4ed8;
+  border-color: #1d4ed8;
 }
 .border-emerald-800 {
-    border-color: #065f46;
+  border-color: #065f46;
 }
 .border-yellow-600 {
-    border-color: #ca8a04;
+  border-color: #ca8a04;
 }
 
 .border {
-    border-width: 1px;
-    border-style: solid;
+  border-width: 1px;
+  border-style: solid;
 }
 
 .truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

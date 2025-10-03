@@ -101,6 +101,14 @@ export function getDuration(
     const laterDate = start < end ? end : start;
 
     switch (viewMode) {
+      case ViewMode.MINUTE:
+        const diffMinutes = Math.round((laterDate.getTime() - earlierDate.getTime()) / (1000 * 60));
+        return { value: diffMinutes, unit: diffMinutes === 1 ? 'minute' : 'minutes' };
+
+      case ViewMode.HOUR:
+        const diffHours = Math.round((laterDate.getTime() - earlierDate.getTime()) / (1000 * 60 * 60));
+        return { value: diffHours, unit: diffHours === 1 ? 'hour' : 'hours' };
+
       case ViewMode.DAY:
         const days = differenceInDays(laterDate, earlierDate) + 1;
         return { value: days, unit: days === 1 ? 'day' : 'days' };

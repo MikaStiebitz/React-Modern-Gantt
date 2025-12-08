@@ -90,6 +90,9 @@ export interface GanttChartProps {
   infiniteScroll?: boolean; // Enable automatic timeline extension
   onTimelineExtend?: (direction: 'left' | 'right', newStartDate: Date, newEndDate: Date) => void;
 
+  // NEW: Focus mode - automatically scroll to show "now" when switching view modes
+  focusMode?: boolean; // Default: false
+
   // Custom rendering functions
   renderTaskList?: (props: TaskListRenderProps) => React.ReactNode;
   renderTask?: (props: TaskRenderProps) => React.ReactNode;

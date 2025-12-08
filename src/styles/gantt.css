@@ -678,6 +678,48 @@
   scroll-behavior: auto !important;
 }
 
+/* Smooth transitions for view mode switching */
+.rmg-timeline-container {
+  transition: scroll-behavior 0.3s ease;
+}
+
+.rmg-timeline-content {
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+.rmg-timeline-grid {
+  transition: transform 0.3s ease;
+}
+
+/* Smooth view mode transitions */
+.rmg-gantt-chart[data-view-mode] .rmg-timeline-unit {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rmg-timeline-header,
+.rmg-timeline-header-higher {
+  transition: min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth task item transitions during view mode changes (but not during dragging) */
+.rmg-task-item:not([data-dragging="true"]) {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure smooth scrolling during auto-scroll */
+.rmg-timeline-container.rmg-auto-scrolling {
+  scroll-behavior: auto !important;
+}
+
+/* Smooth scroll when not auto-scrolling */
+.rmg-timeline-container:not(.rmg-auto-scrolling) {
+  scroll-behavior: smooth;
+}
+
 /* Visual scrollable indicator */
 .rmg-timeline-container.rmg-scrollable-x::after {
   content: '';

@@ -271,15 +271,25 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
   };
 
-  // Start auto-scrolling with infinite scroll support
+  // Start auto-scrolling with infinite scroll support - IMPROVED for smoother scrolling
   const startAutoScroll = () => {
     if (autoScrollActive.current) return;
 
     autoScrollActive.current = true;
 
-    // Use requestAnimationFrame for smoother scrolling
+    // Disable smooth scroll behavior during auto-scroll for better performance
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.style.scrollBehavior = 'auto';
+    }
+
+    // Use requestAnimationFrame for smoother scrolling with easing
+    let lastTime = performance.now();
     const doScroll = () => {
       if (!autoScrollActive.current || !scrollContainerRef?.current || !targetPositionRef.current) return;
+
+      const now = performance.now();
+      const deltaTime = Math.min(now - lastTime, 16); // Cap at ~60fps
+      lastTime = now;
 
       const container = scrollContainerRef.current;
       const direction = autoScrollDirectionRef.current;
@@ -289,6 +299,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
       const currentScrollLeft = container.scrollLeft;
       // Get maximum scroll position
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+      // Apply easing for smoother acceleration/deceleration
+      const easingFactor = 0.15; // Smooth interpolation
+      const frameSpeed = speed * (deltaTime / 16); // Normalize to frame time
 
       if (direction === 'left') {
         // Check if we're at the beginning and should extend timeline
@@ -303,13 +317,29 @@ const TaskRow: React.FC<TaskRowProps> = ({
           return;
         }
 
-        const newScrollLeft = Math.max(0, currentScrollLeft - speed);
+        // Calculate actual scroll amount
+        const scrollAmount = Math.min(frameSpeed * 3, currentScrollLeft); // Faster scroll, bounded
+        const newScrollLeft = currentScrollLeft - scrollAmount;
         container.scrollLeft = newScrollLeft;
 
-        // Update target position during auto-scroll, but enforce boundaries
-        if (targetPositionRef.current) {
-          const newLeft = Math.max(timelineLimitsRef.current.minLeft, targetPositionRef.current.left - speed);
-          targetPositionRef.current.left = newLeft;
+        // When scrolling left (viewport moves left), the task should move left on the timeline
+        // to stay in the same visual position relative to the mouse
+        if (targetPositionRef.current && taskElementRef.current) {
+          const currentLeft = parseFloat(taskElementRef.current.style.left || '0');
+          // Move task left by the same amount we scrolled
+          const adjustedLeft = Math.max(timelineLimitsRef.current.minLeft, currentLeft - scrollAmount);
+          targetPositionRef.current.left = adjustedLeft;
+          if (currentPositionRef.current) {
+            currentPositionRef.current.left = adjustedLeft;
+          }
+
+          // Apply position immediately to keep task visible
+          taskElementRef.current.style.left = `${adjustedLeft}px`;
+
+          // Update dates based on new position
+          if (draggingTaskRef.current) {
+            updateDatesFromPosition(adjustedLeft, targetPositionRef.current.width);
+          }
         }
       } else if (direction === 'right') {
         // Check if we're at the end and should extend timeline
@@ -324,14 +354,30 @@ const TaskRow: React.FC<TaskRowProps> = ({
           return;
         }
 
-        const newScrollLeft = Math.min(maxScrollLeft, currentScrollLeft + speed);
+        // Calculate actual scroll amount
+        const scrollAmount = Math.min(frameSpeed * 3, maxScrollLeft - currentScrollLeft); // Faster scroll, bounded
+        const newScrollLeft = currentScrollLeft + scrollAmount;
         container.scrollLeft = newScrollLeft;
 
-        // Update target position during auto-scroll, but enforce boundaries
-        if (targetPositionRef.current && initialTaskState) {
+        // When scrolling right (viewport moves right), the task should move right on the timeline
+        // to stay in the same visual position relative to the mouse
+        if (targetPositionRef.current && taskElementRef.current && initialTaskState) {
+          const currentLeft = parseFloat(taskElementRef.current.style.left || '0');
           const maxLeftPosition = timelineLimitsRef.current.maxLeft - targetPositionRef.current.width;
-          const newLeft = Math.min(maxLeftPosition, targetPositionRef.current.left + speed);
-          targetPositionRef.current.left = newLeft;
+          // Move task right by the same amount we scrolled
+          const adjustedLeft = Math.min(maxLeftPosition, currentLeft + scrollAmount);
+          targetPositionRef.current.left = adjustedLeft;
+          if (currentPositionRef.current) {
+            currentPositionRef.current.left = adjustedLeft;
+          }
+
+          // Apply position immediately to keep task visible
+          taskElementRef.current.style.left = `${adjustedLeft}px`;
+
+          // Update dates based on new position
+          if (draggingTaskRef.current) {
+            updateDatesFromPosition(adjustedLeft, targetPositionRef.current.width);
+          }
         }
       }
 
@@ -350,6 +396,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
     if (autoScrollTimerRef.current !== null) {
       cancelAnimationFrame(autoScrollTimerRef.current);
       autoScrollTimerRef.current = null;
+    }
+
+    // Re-enable smooth scroll behavior after auto-scroll stops
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.style.scrollBehavior = '';
     }
   };
 

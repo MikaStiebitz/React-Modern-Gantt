@@ -6,6 +6,7 @@ import DemoViewModes from "./DemoViewModes";
 import DemoInfiniteScroll from "./DemoInfiniteScroll";
 import DemoExport from "./DemoExport";
 import { DemoGranularControls } from "./DemoGranularControls";
+import DemoStickyHeaders from "./DemoStickyHeaders";
 
 const App: React.FC = () => {
     const [darkMode, setDarkMode] = useState(false);
@@ -58,6 +59,11 @@ const App: React.FC = () => {
                     Basic Usage
                 </div>
                 <div
+                    className={`section-nav-link ${activeSection === "sticky" ? "active" : ""}`}
+                    onClick={() => setActiveSection("sticky")}>
+                    Sticky Headers
+                </div>
+                <div
                     className={`section-nav-link ${activeSection === "viewmodes" ? "active" : ""}`}
                     onClick={() => setActiveSection("viewmodes")}>
                     View Modes
@@ -92,6 +98,15 @@ const App: React.FC = () => {
                     reschedule them, resize them to change duration, and click on them to see details.
                 </p>
                 <DemoBasic darkMode={darkMode} />
+            </div>
+
+            <div id="section-sticky" className="demo-section">
+                <h2 className="demo-title">Sticky Headers</h2>
+                <p className="demo-description">
+                    With many tasks, the timeline headers and resource names stay visible when scrolling vertically.
+                    This keeps the date context always visible for better navigation through large project lists.
+                </p>
+                <DemoStickyHeaders darkMode={darkMode} />
             </div>
 
             <div id="section-viewmodes" className="demo-section">

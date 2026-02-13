@@ -123,6 +123,7 @@
 .rmg-container {
     display: flex;
     position: relative;
+    overflow: auto;
 }
 
 /* ======================================================
@@ -160,8 +161,9 @@
     flex-shrink: 0;
     background-color: var(--rmg-bg-color);
     border-right: 1px solid var(--rmg-border-color);
-    overflow-y: auto;
     z-index: 10;
+    position: sticky;
+    left: 0;
 }
 
 .rmg-task-list-header {
@@ -174,6 +176,10 @@
     box-sizing: border-box;
     transition: height 0.2s ease;
     height: calc(var(--rmg-header-height) + 1px);
+    position: relative;
+    z-index: 101;
+    background-color: var(--rmg-bg-color);
+    will-change: transform;
 }
 
 /* Höherer Header für Minute/Hour/Day/Week View mit doppelten Timeline-Headern */
@@ -225,7 +231,6 @@
    ====================================================== */
 .rmg-timeline-container {
     flex-grow: 1;
-    overflow-x: auto;
     position: relative;
     background-color: var(--rmg-bg-color);
 }
@@ -245,6 +250,13 @@
     border-bottom: 1px solid var(--rmg-border-color);
     background-color: var(--rmg-bg-color);
     min-height: var(--rmg-header-height);
+    position: relative;
+    z-index: 100;
+    will-change: transform;
+}
+
+.rmg-timeline-header-higher {
+    z-index: 101;
 }
 
 .rmg-timeline-unit {
@@ -521,14 +533,25 @@
     top: 0;
     bottom: 0;
     width: 1px;
+    pointer-events: none;
+}
+
+/* The actual line as pseudo-element with low z-index */
+.rmg-today-marker::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
     background-color: var(--rmg-marker-color);
-    z-index: 10;
     box-shadow: 0 0 4px var(--rmg-marker-color);
+    z-index: 50;
 }
 
 .rmg-today-marker-label {
     position: absolute;
-    top: -16px;
+    top: -11px;
     left: 0;
     transform: translateX(-50%);
     background-color: var(--rmg-marker-color);
@@ -539,6 +562,8 @@
     font-weight: 600;
     white-space: nowrap;
     box-shadow: 0 1px 3px var(--rmg-shadow-color);
+    z-index: 1100 !important;
+    will-change: transform;
 }
 
 /* ======================================================
@@ -636,7 +661,7 @@
 /* ======================================================
    13. Scrollbar Styling
    ====================================================== */
-.rmg-timeline-container {
+.rmg-container {
     /* Firefox scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--rmg-scrollbar-thumb) var(--rmg-scrollbar-track);
@@ -644,18 +669,18 @@
 }
 
 /* Webkit-based browsers (Chrome, Safari, newer Edge) */
-.rmg-timeline-container::-webkit-scrollbar {
+.rmg-container::-webkit-scrollbar {
     width: var(--rmg-scrollbar-size);
     height: var(--rmg-scrollbar-size);
 }
 
-.rmg-timeline-container::-webkit-scrollbar-track {
+.rmg-container::-webkit-scrollbar-track {
     background: var(--rmg-scrollbar-track);
     border-radius: 12px;
     margin: 0 6px; /* Add some space on the edges */
 }
 
-.rmg-timeline-container::-webkit-scrollbar-thumb {
+.rmg-container::-webkit-scrollbar-thumb {
     background-color: var(--rmg-scrollbar-thumb);
     border-radius: 12px;
     border: 2px solid transparent;
@@ -664,11 +689,11 @@
     transition: background-color 0.2s ease;
 }
 
-.rmg-timeline-container::-webkit-scrollbar-thumb:hover {
+.rmg-container::-webkit-scrollbar-thumb:hover {
     background-color: var(--rmg-scrollbar-thumb-hover);
 }
 
-.rmg-timeline-container::-webkit-scrollbar-corner {
+.rmg-container::-webkit-scrollbar-corner {
     background-color: transparent;
 }
 

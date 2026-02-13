@@ -119,6 +119,7 @@ export interface GanttChartProps {
   rowHeight?: number;
   timeStep?: number;
   unitWidth?: number;
+  maxHeight?: string | number; // Max height for the chart body (enables vertical scrolling with sticky headers)
 }
 export interface TaskRowProps {
   taskGroup: TaskGroup;

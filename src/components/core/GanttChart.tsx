@@ -71,6 +71,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
             fontSize,
             rowHeight = 40,
             timeStep,
+            maxHeight,
         },
         ref,
     ) => {
@@ -800,6 +801,44 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
             }
         }, [animationSpeed, containerRef.current]);
 
+        // Sticky headers: translate timeline headers and task-list header on vertical scroll
+        useEffect(() => {
+            const scrollContainer = scrollContainerRef.current;
+            if (!scrollContainer) return;
+
+            const handleScroll = () => {
+                const scrollTop = scrollContainer.scrollTop;
+
+                // Translate timeline headers
+                const higherHeaders = scrollContainer.querySelectorAll<HTMLElement>(".rmg-timeline-header-higher");
+                const mainHeaders = scrollContainer.querySelectorAll<HTMLElement>(".rmg-timeline-header");
+                const taskListHeader = scrollContainer.querySelector<HTMLElement>(".rmg-task-list-header");
+                const todayMarkerLabel = scrollContainer.querySelector<HTMLElement>(".rmg-today-marker-label");
+
+                higherHeaders.forEach(el => {
+                    el.style.transform = `translateY(${scrollTop}px)`;
+                });
+
+                const higherHeaderHeight = higherHeaders.length > 0 ? higherHeaders[0].offsetHeight : 0;
+
+                mainHeaders.forEach(el => {
+                    el.style.transform = `translateY(${scrollTop}px)`;
+                });
+
+                if (taskListHeader) {
+                    taskListHeader.style.transform = `translateY(${scrollTop}px)`;
+                }
+
+                // Make today marker label sticky (stays at top)
+                if (todayMarkerLabel) {
+                    todayMarkerLabel.style.transform = `translate(-50%, ${scrollTop}px)`;
+                }
+            };
+
+            scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+            return () => scrollContainer.removeEventListener("scroll", handleScroll);
+        }, [scrollContainerRef.current]);
+
         const style: React.CSSProperties = {
             fontSize: fontSize || "inherit",
         };
@@ -895,7 +934,15 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                 data-view-mode={activeViewMode}>
                 {renderHeaderContent()}
 
-                <div className="rmg-container" data-rmg-component="container">
+                <div
+                    ref={scrollContainerRef}
+                    className={`rmg-container ${isAutoScrolling ? "rmg-auto-scrolling" : ""}`}
+                    data-rmg-component="container"
+                    style={
+                        maxHeight
+                            ? { maxHeight: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight }
+                            : undefined
+                    }>
                     {renderTaskList ? (
                         renderTaskList({
                             tasks,
@@ -913,10 +960,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                         />
                     )}
 
-                    <div
-                        ref={scrollContainerRef}
-                        className={`rmg-timeline-container ${isAutoScrolling ? "rmg-auto-scrolling" : ""}`}
-                        data-rmg-component="timeline-container">
+                    <div className="rmg-timeline-container" data-rmg-component="timeline-container">
                         <div className="rmg-timeline-content" data-rmg-component="timeline-content">
                             {renderTimelineHeaderContent()}
 

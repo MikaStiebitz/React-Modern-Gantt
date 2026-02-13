@@ -76,5 +76,5 @@ export default {
         }),
         terser(),
     ],
-    external: ["react", "react-dom", "date-fns"],
+    external: ["react", "react-dom", "date-fns", "html2canvas", "jspdf"],
 };

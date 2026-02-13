@@ -54,7 +54,7 @@
     },
     "optionalDependencies": {
         "html2canvas": "^1.4.1",
-        "jspdf": "^2.5.1"
+        "jspdf": "^4.1.0"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^28.0.6",
@@ -71,6 +71,7 @@
         "@typescript-eslint/eslint-plugin": "^8.45.0",
         "@typescript-eslint/parser": "^8.45.0",
         "autoprefixer": "^10.4.21",
+        "baseline-browser-mapping": "^2.9.19",
         "eslint": "^9.36.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",

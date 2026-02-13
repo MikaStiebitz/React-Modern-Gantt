@@ -1,17 +1,18 @@
-import React, { useRef, useState, useEffect } from "react";
-import { GanttChartProps, ViewMode, TaskGroup, Task } from "@/types";
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import { GanttChartProps, ViewMode, TaskGroup, Task, GanttChartRef, ExportOptions, ExportResult, ExportFormat } from "@/types";
 import { getMonthsBetween, findEarliestDate, findLatestDate } from "@/utils";
 import { Timeline, TodayMarker } from "@/components/timeline";
 import { ViewModeSelector } from "@/components/ui";
 import { TaskRow, TaskList } from "@/components/task";
+import { ExportService } from "@/services/ExportService";
 import { addDays, addHours, addMinutes, addQuarters, startOfQuarter, addYears, startOfYear } from "date-fns";
 import { CollisionService } from "@/services/CollisionService";
 
 /**
- * GanttChart Component with ViewMode support
+ * GanttChart Component with ViewMode support and Export functionality
  * A modern, customizable Gantt chart for project timelines
  */
-const GanttChart: React.FC<GanttChartProps> = ({
+const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(({
     tasks = [],
     startDate: customStartDate,
     endDate: customEndDate,
@@ -63,7 +64,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
     fontSize,
     rowHeight = 40,
     timeStep,
-}) => {
+}, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [activeViewMode, setActiveViewMode] = useState<ViewMode>(viewMode);
@@ -77,6 +78,117 @@ const GanttChart: React.FC<GanttChartProps> = ({
     // Calculate timeline bounds
     const derivedStartDate = customStartDate || findEarliestDate(tasks);
     const derivedEndDate = customEndDate || findLatestDate(tasks);
+
+    // Expose export methods via ref
+    useImperativeHandle(ref, () => ({
+        exportChart: async (options?: ExportOptions): Promise<ExportResult> => {
+            if (!containerRef.current) {
+                return {
+                    success: false,
+                    error: 'Container element not available',
+                };
+            }
+            return ExportService.export(containerRef.current, {
+                ...options,
+                backgroundColor: darkMode ? '#1f2937' : options?.backgroundColor || '#ffffff',
+            });
+        },
+
+        getDataUrl: async (format?: ExportFormat, options?: Omit<ExportOptions, 'format' | 'filename'>): Promise<string | null> => {
+            if (!containerRef.current) return null;
+            return ExportService.getDataUrl(containerRef.current, format, {
+                ...options,
+                backgroundColor: darkMode ? '#1f2937' : options?.backgroundColor || '#ffffff',
+            });
+        },
+
+        getBlob: async (format?: ExportFormat, options?: Omit<ExportOptions, 'format' | 'filename'>): Promise<Blob | null> => {
+            if (!containerRef.current) return null;
+            return ExportService.getBlob(containerRef.current, format, {
+                ...options,
+                backgroundColor: darkMode ? '#1f2937' : options?.backgroundColor || '#ffffff',
+            });
+        },
+
+        copyToClipboard: async (options?: Omit<ExportOptions, 'format' | 'filename'>): Promise<boolean> => {
+            if (!containerRef.current) return false;
+            return ExportService.copyToClipboard(containerRef.current, {
+                ...options,
+                backgroundColor: darkMode ? '#1f2937' : options?.backgroundColor || '#ffffff',
+            });
+        },
+
+        getContainerElement: (): HTMLDivElement | null => {
+            return containerRef.current;
+        },
+
+        scrollToDate: (date: Date): void => {
+            if (!scrollContainerRef.current) return;
+            
+            const timeUnitsArray = getTimeUnitsForMode(activeViewMode);
+            const targetIndex = findDateIndex(date, timeUnitsArray, activeViewMode);
+            
+            if (targetIndex >= 0) {
+                const scrollPosition = targetIndex * viewUnitWidth;
+                scrollContainerRef.current.scrollLeft = scrollPosition - scrollContainerRef.current.clientWidth / 2;
+            }
+        },
+
+        scrollToToday: (): void => {
+            scrollToNow(activeViewMode, viewUnitWidth);
+        },
+    }), [darkMode, activeViewMode, viewUnitWidth]);
+
+    // Helper to find date index in time units
+    const findDateIndex = (date: Date, timeUnits: Date[], mode: ViewMode): number => {
+        switch (mode) {
+            case ViewMode.MINUTE:
+                return timeUnits.findIndex(
+                    d =>
+                        d.getHours() === date.getHours() &&
+                        Math.floor(d.getMinutes() / (minuteStep || 5)) ===
+                            Math.floor(date.getMinutes() / (minuteStep || 5)) &&
+                        d.getDate() === date.getDate() &&
+                        d.getMonth() === date.getMonth() &&
+                        d.getFullYear() === date.getFullYear()
+                );
+            case ViewMode.HOUR:
+                return timeUnits.findIndex(
+                    d =>
+                        d.getHours() === date.getHours() &&
+                        d.getDate() === date.getDate() &&
+                        d.getMonth() === date.getMonth() &&
+                        d.getFullYear() === date.getFullYear()
+                );
+            case ViewMode.DAY:
+                return timeUnits.findIndex(
+                    d =>
+                        d.getDate() === date.getDate() &&
+                        d.getMonth() === date.getMonth() &&
+                        d.getFullYear() === date.getFullYear()
+                );
+            case ViewMode.WEEK:
+                return timeUnits.findIndex(d => {
+                    const weekEndDate = new Date(d);
+                    weekEndDate.setDate(d.getDate() + 6);
+                    return date >= d && date <= weekEndDate;
+                });
+            case ViewMode.MONTH:
+                return timeUnits.findIndex(
+                    d => d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear()
+                );
+            case ViewMode.QUARTER:
+                const dateQuarter = Math.floor(date.getMonth() / 3);
+                return timeUnits.findIndex(
+                    d =>
+                        Math.floor(d.getMonth() / 3) === dateQuarter && d.getFullYear() === date.getFullYear()
+                );
+            case ViewMode.YEAR:
+                return timeUnits.findIndex(d => d.getFullYear() === date.getFullYear());
+            default:
+                return -1;
+        }
+    };
 
     // NEW: Infinite scroll - extend timeline when needed
     const handleTimelineExtension = (direction: "left" | "right") => {
@@ -855,6 +967,8 @@ const GanttChart: React.FC<GanttChartProps> = ({
             </div>
         </div>
     );
-};
+});
+
+GanttChart.displayName = 'GanttChart';
 
 export default GanttChart;

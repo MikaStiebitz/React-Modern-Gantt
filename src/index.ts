@@ -25,6 +25,10 @@ export { Timeline, TodayMarker } from "./components/timeline";
 // UI components
 export { Tooltip, ViewModeSelector } from "./components/ui";
 
+// Hooks
+export { useGanttExport } from "./hooks";
+export type { UseGanttExportReturn } from "./hooks";
+
 // Types
 export type {
     // Core types
@@ -52,6 +56,13 @@ export type {
 
     // Utility types
     TaskInteraction,
+
+    // Export types
+    ExportFormat,
+    ExportOptions,
+    ExportResult,
+    PdfExportOptions,
+    GanttChartRef,
 } from "./types";
 
 // Enums
@@ -62,7 +73,7 @@ export {
 } from "./types";
 
 // Export utility functions for advanced usage
-export { CollisionService, TaskService } from "./services";
+export { CollisionService, TaskService, ExportService } from "./services";
 export {
     formatDate,
     formatMonth,

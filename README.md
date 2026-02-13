@@ -27,6 +27,7 @@ A flexible, customizable Gantt chart component for React applications with drag-
 - [Task & TaskGroup Data Structure](#-task--taskgroup-data-structure)
 - [View Modes](#-view-modes)
 - [Interactive Progress Editing](#-interactive-progress-editing)
+- [Export Functionality](#-export-functionality)
 - [Infinite Scroll](#-infinite-scroll)
 - [Performance Optimization](#-performance-optimization)
 - [Customization](#-customization)
@@ -605,6 +606,265 @@ function App() {
 - **Combine with current date marker**: Use `showCurrentDateMarker={true}` for visual reference
 - **Disable when not needed**: Set `focusMode={false}` for historical data or long-term planning views where current time is not relevant
 - **Manual control**: Use the `scrollToToday()` ref method for custom scroll behavior
+
+## 📤 Export Functionality
+
+React Modern Gantt includes powerful export capabilities that allow you to export your Gantt chart as **PNG**, **JPEG**, or **PDF** files. You can also get the chart as a **data URL** or copy it directly to the **clipboard**.
+
+### Installation
+
+To use the export functionality, you need to install the required dependencies:
+
+```bash
+npm install html2canvas jspdf
+```
+
+### Basic Usage
+
+Use the `useGanttExport` hook to access all export functions:
+
+```jsx
+import React, { useState } from 'react';
+import { GanttChart, useGanttExport } from 'react-modern-gantt';
+import 'react-modern-gantt/dist/index.css';
+
+function App() {
+  const [tasks, setTasks] = useState([...]);
+
+  // Get export functionality from the hook
+  const {
+    ganttRef,           // Ref to attach to GanttChart
+    exportAsPng,        // Export as PNG
+    exportAsJpeg,       // Export as JPEG
+    exportAsPdf,        // Export as PDF
+    exportChart,        // Custom export with options
+    getDataUrl,         // Get as data URL
+    copyToClipboard,    // Copy to clipboard
+    checkDependencies,  // Check if dependencies are installed
+  } = useGanttExport();
+
+  const handleExportPng = async () => {
+    await exportAsPng('my-gantt-chart');
+  };
+
+  const handleExportPdf = async () => {
+    await exportAsPdf('my-gantt-chart');
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <button onClick={handleExportPng}>Export as PNG</button>
+        <button onClick={handleExportPdf}>Export as PDF</button>
+      </div>
+
+      {/* IMPORTANT: Attach the ref to GanttChart */}
+      <GanttChart
+        ref={ganttRef}
+        tasks={tasks}
+        onTaskUpdate={setTasks}
+      />
+    </div>
+  );
+}
+```
+
+### Export Methods
+
+#### Export as PNG
+
+```jsx
+const handleExportPng = async () => {
+  await exportAsPng('gantt-chart'); // filename (without extension)
+};
+```
+
+#### Export as JPEG
+
+```jsx
+const handleExportJpeg = async () => {
+  await exportAsJpeg('gantt-chart', 0.95); // filename, quality (0-1)
+};
+```
+
+#### Export as PDF
+
+```jsx
+const handleExportPdf = async () => {
+  await exportAsPdf('gantt-chart'); // filename (without extension)
+};
+```
+
+#### Custom Export with Options
+
+```jsx
+const handleCustomExport = async () => {
+  await exportChart({
+    format: 'png',                    // 'png', 'jpeg', or 'pdf'
+    filename: 'custom-export',        // filename without extension
+    quality: 0.95,                    // image quality (0-1)
+    scale: 2,                         // scale factor for higher resolution
+    backgroundColor: '#ffffff',       // background color
+  });
+};
+```
+
+#### Get Data URL
+
+```jsx
+const handleGetDataUrl = async () => {
+  const dataUrl = await getDataUrl('png'); // 'png' or 'jpeg'
+
+  // Use the data URL (e.g., display in an img tag)
+  console.log(dataUrl);
+};
+```
+
+#### Copy to Clipboard
+
+```jsx
+const handleCopyToClipboard = async () => {
+  const result = await copyToClipboard();
+
+  if (result.success) {
+    alert('Chart copied to clipboard!');
+  } else {
+    alert(`Error: ${result.error}`);
+  }
+};
+```
+
+### Check Dependencies
+
+You can check if the required export dependencies are installed:
+
+```jsx
+import React, { useEffect, useState } from 'react';
+import { useGanttExport } from 'react-modern-gantt';
+
+function ExportComponent() {
+  const { checkDependencies } = useGanttExport();
+  const [deps, setDeps] = useState(null);
+
+  useEffect(() => {
+    const checkLibs = async () => {
+      const dependencies = await checkDependencies();
+      setDeps(dependencies);
+    };
+    checkLibs();
+  }, [checkDependencies]);
+
+  return (
+    <div>
+      {deps && (
+        <div>
+          <p>html2canvas: {deps.html2canvas ? '✓ Installed' : '✗ Missing'}</p>
+          <p>jsPDF: {deps.jspdf ? '✓ Installed' : '✗ Missing'}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Export Options
+
+| Option            | Type     | Default     | Description                                      |
+| ----------------- | -------- | ----------- | ------------------------------------------------ |
+| `format`          | `string` | `'png'`     | Export format: `'png'`, `'jpeg'`, or `'pdf'`     |
+| `filename`        | `string` | `'gantt'`   | Filename without extension                       |
+| `quality`         | `number` | `0.92`      | Image quality (0-1, only for JPEG)               |
+| `scale`           | `number` | `1`         | Scale factor for higher resolution               |
+| `backgroundColor` | `string` | `'#ffffff'` | Background color (CSS color value)               |
+
+### Best Practices
+
+- **Install dependencies**: Make sure to install `html2canvas` and `jspdf` for export functionality
+- **Check dependencies**: Use `checkDependencies()` to verify dependencies are available before enabling export features
+- **Handle errors**: Wrap export calls in try-catch blocks to handle potential errors gracefully
+- **Higher quality**: Use `scale: 2` or higher for better resolution in exports
+- **Dark mode exports**: Set `backgroundColor` to match your chart's dark mode when exporting
+- **User feedback**: Show loading indicators and success/error messages during export operations
+
+### Complete Example with UI
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import { GanttChart, useGanttExport } from 'react-modern-gantt';
+import 'react-modern-gantt/dist/index.css';
+
+function App() {
+  const [tasks, setTasks] = useState([...]);
+  const [darkMode, setDarkMode] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
+  const [dependencies, setDependencies] = useState(null);
+
+  const {
+    ganttRef,
+    exportAsPng,
+    exportAsPdf,
+    checkDependencies,
+  } = useGanttExport();
+
+  // Check dependencies on mount
+  useEffect(() => {
+    const checkLibs = async () => {
+      const deps = await checkDependencies();
+      setDependencies(deps);
+    };
+    checkLibs();
+  }, [checkDependencies]);
+
+  const handleExport = async (exportFn, action) => {
+    setExportStatus(`Exporting ${action}...`);
+    try {
+      await exportFn();
+      setExportStatus(`✓ ${action} exported successfully!`);
+    } catch (error) {
+      setExportStatus(`✗ Error: ${error.message}`);
+    }
+    setTimeout(() => setExportStatus(''), 3000);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <button
+          onClick={() => handleExport(() => exportAsPng('gantt'), 'PNG')}
+          disabled={!dependencies?.html2canvas}
+        >
+          📥 Export PNG
+        </button>
+        <button
+          onClick={() => handleExport(() => exportAsPdf('gantt'), 'PDF')}
+          disabled={!dependencies?.html2canvas || !dependencies?.jspdf}
+        >
+          📄 Export PDF
+        </button>
+      </div>
+
+      {exportStatus && (
+        <div style={{
+          padding: '0.75rem',
+          backgroundColor: exportStatus.startsWith('✓') ? '#10b981' : '#ef4444',
+          color: 'white',
+          borderRadius: '8px',
+          marginBottom: '1rem'
+        }}>
+          {exportStatus}
+        </div>
+      )}
+
+      <GanttChart
+        ref={ganttRef}
+        tasks={tasks}
+        darkMode={darkMode}
+        onTaskUpdate={setTasks}
+      />
+    </div>
+  );
+}
+```
 
 ## ⚡ Performance Optimization
 

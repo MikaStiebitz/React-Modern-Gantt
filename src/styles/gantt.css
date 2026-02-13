@@ -161,7 +161,7 @@
     flex-shrink: 0;
     background-color: var(--rmg-bg-color);
     border-right: 1px solid var(--rmg-border-color);
-    z-index: 10;
+    z-index: 200;
     position: sticky;
     left: 0;
 }
@@ -177,17 +177,26 @@
     transition: height 0.2s ease;
     height: calc(var(--rmg-header-height) + 1px);
     position: relative;
-    z-index: 101;
+    z-index: 201;
     background-color: var(--rmg-bg-color);
     will-change: transform;
 }
 
 /* Höherer Header für Minute/Hour/Day/Week View mit doppelten Timeline-Headern */
-.rmg-gantt-chart[data-view-mode="minute"] .rmg-task-list-header,
-.rmg-gantt-chart[data-view-mode="hour"] .rmg-task-list-header,
-.rmg-gantt-chart[data-view-mode="day"] .rmg-task-list-header,
-.rmg-gantt-chart[data-view-mode="week"] .rmg-task-list-header {
+/* Nur wenn showTimelineHeader true ist (default) */
+.rmg-gantt-chart[data-view-mode="minute"] .rmg-task-list-header[data-show-timeline-header="true"],
+.rmg-gantt-chart[data-view-mode="hour"] .rmg-task-list-header[data-show-timeline-header="true"],
+.rmg-gantt-chart[data-view-mode="day"] .rmg-task-list-header[data-show-timeline-header="true"],
+.rmg-gantt-chart[data-view-mode="week"] .rmg-task-list-header[data-show-timeline-header="true"] {
     height: calc(var(--rmg-header-height) * 2 + 2px);
+}
+
+/* Standard Höhe beibehalten wenn showTimelineHeader false ist */
+.rmg-gantt-chart[data-view-mode="minute"] .rmg-task-list-header[data-show-timeline-header="false"],
+.rmg-gantt-chart[data-view-mode="hour"] .rmg-task-list-header[data-show-timeline-header="false"],
+.rmg-gantt-chart[data-view-mode="day"] .rmg-task-list-header[data-show-timeline-header="false"],
+.rmg-gantt-chart[data-view-mode="week"] .rmg-task-list-header[data-show-timeline-header="false"] {
+    height: calc(var(--rmg-header-height) + 1px);
 }
 
 .rmg-task-group {
@@ -196,6 +205,8 @@
     background-color: var(--rmg-bg-color);
     cursor: pointer;
     transition: background-color 0.15s ease;
+    position: relative;
+    z-index: 200;
 }
 
 .rmg-task-group:hover {

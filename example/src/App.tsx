@@ -7,6 +7,7 @@ import DemoInfiniteScroll from "./DemoInfiniteScroll";
 import DemoExport from "./DemoExport";
 import { DemoGranularControls } from "./DemoGranularControls";
 import DemoStickyHeaders from "./DemoStickyHeaders";
+import DemoTimelineHeader from "./DemoTimelineHeader";
 
 const App: React.FC = () => {
     const [darkMode, setDarkMode] = useState(false);
@@ -59,6 +60,11 @@ const App: React.FC = () => {
                     Basic Usage
                 </div>
                 <div
+                    className={`section-nav-link ${activeSection === "timelineheader" ? "active" : ""}`}
+                    onClick={() => setActiveSection("timelineheader")}>
+                    Timeline Header
+                </div>
+                <div
                     className={`section-nav-link ${activeSection === "sticky" ? "active" : ""}`}
                     onClick={() => setActiveSection("sticky")}>
                     Sticky Headers
@@ -98,6 +104,16 @@ const App: React.FC = () => {
                     reschedule them, resize them to change duration, and click on them to see details.
                 </p>
                 <DemoBasic darkMode={darkMode} />
+            </div>
+
+            <div id="section-timelineheader" className="demo-section">
+                <h2 className="demo-title">Timeline Header Configuration</h2>
+                <p className="demo-description">
+                    Toggle the <code>showTimelineHeader</code> prop to show or hide the hierarchical header (Month +
+                    Year in Week view). This is useful when you want a cleaner view with only the week numbers without
+                    the month/year information above.
+                </p>
+                <DemoTimelineHeader darkMode={darkMode} />
             </div>
 
             <div id="section-sticky" className="demo-section">

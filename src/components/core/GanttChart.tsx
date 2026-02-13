@@ -42,6 +42,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
             styles = {},
             viewMode = ViewMode.MONTH,
             viewModes, // Array of allowed view modes or false to hide
+            showTimelineHeader = true, // Show hierarchical header (month/year)
             smoothDragging = true,
             movementThreshold = 3,
             animationSpeed = 0.25,
@@ -915,6 +916,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                     className={getComponentClassName("timeline", "rmg-timeline")}
                     viewMode={activeViewMode}
                     unitWidth={viewUnitWidth}
+                    showTimelineHeader={showTimelineHeader}
                 />
             );
         };
@@ -957,6 +959,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                             onGroupClick={onGroupClick}
                             className={getComponentClassName("taskList", "rmg-task-list")}
                             viewMode={activeViewMode}
+                            showTimelineHeader={showTimelineHeader}
                         />
                     )}
 

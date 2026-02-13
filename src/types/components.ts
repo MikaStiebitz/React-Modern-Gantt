@@ -81,16 +81,19 @@ export interface GanttChartProps {
   // Updated ViewMode configuration
   viewModes?: ViewMode[] | false; // Array of allowed modes, or false to hide selector
 
+  // Timeline header configuration
+  showTimelineHeader?: boolean; // Show the hierarchical header (month/year in week view). Default: true
+
   smoothDragging?: boolean;
   movementThreshold?: number;
   animationSpeed?: number;
   minuteStep?: number; // For minute view granularity (e.g., 5, 10, 15 minutes)
 
-  // NEW: Infinite scroll feature
+  // Infinite scroll feature
   infiniteScroll?: boolean; // Enable automatic timeline extension
   onTimelineExtend?: (direction: 'left' | 'right', newStartDate: Date, newEndDate: Date) => void;
 
-  // NEW: Focus mode - automatically scroll to show "now" when switching view modes
+  // Focus mode - automatically scroll to show "now" when switching view modes
   focusMode?: boolean; // Default: true
 
   // Custom rendering functions
@@ -168,6 +171,7 @@ export interface TaskListProps {
   className?: string;
   onGroupClick?: (group: TaskGroup) => void;
   viewMode?: ViewMode;
+  showTimelineHeader?: boolean; // Pass through for styling adjustments
 }
 
 export interface TimelineProps {
@@ -177,6 +181,7 @@ export interface TimelineProps {
   className?: string;
   viewMode?: ViewMode;
   unitWidth?: number;
+  showTimelineHeader?: boolean; // Show the hierarchical header (month/year). Default: true
 }
 
 export interface TaskItemProps {

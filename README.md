@@ -441,26 +441,7 @@ editMode (master switch)
 
 ## 🔄 Infinite Scroll
 
-React Modern Gantt includes an **Infinite Scroll** feature that automatically extends the timeline when tasks are dragged beyond the visible range. This is perfect for dynamic project management where timelines need to adapt to changing schedules.
-
-### How It Works
-
-When enabled, the timeline automatically extends when:
-
-- A task is dragged to the **left edge** (extends timeline backwards)
-- A task is dragged to the **right edge** (extends timeline forwards)
-
-The extension amount is **intelligent** and adapts to the current view mode:
-
-| View Mode | Extension Amount     |
-| --------- | -------------------- |
-| Minute    | +60 minutes (1 hour) |
-| Hour      | +24 hours (1 day)    |
-| Day       | +7 days (1 week)     |
-| Week      | +4 weeks (~1 month)  |
-| Month     | +3 months            |
-| Quarter   | +4 quarters (1 year) |
-| Year      | +5 years             |
+### Currently broken!!! Will be fixed in later versions
 
 ### Usage Example
 

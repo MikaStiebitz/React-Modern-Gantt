@@ -5,7 +5,7 @@
 /**
  * Supported export formats
  */
-export type ExportFormat = 'png' | 'jpeg' | 'jpg' | 'pdf';
+export type ExportFormat = "png" | "jpeg" | "jpg" | "pdf";
 
 /**
  * PDF-specific export options
@@ -15,13 +15,13 @@ export interface PdfExportOptions {
    * Page orientation
    * @default 'landscape'
    */
-  orientation?: 'portrait' | 'landscape';
+  orientation?: "portrait" | "landscape";
 
   /**
    * Page size
    * @default 'a4'
    */
-  pageSize?: 'a4' | 'a3' | 'letter' | 'legal' | [number, number];
+  pageSize?: "a4" | "a3" | "letter" | "legal" | [number, number];
 
   /**
    * Page margins in mm
@@ -155,17 +155,25 @@ export interface GanttChartRef {
   /**
    * Get the chart as a data URL (without downloading)
    */
-  getDataUrl: (format?: ExportFormat, options?: Omit<ExportOptions, 'format' | 'filename'>) => Promise<string | null>;
+  getDataUrl: (
+    format?: ExportFormat,
+    options?: Omit<ExportOptions, "format" | "filename">,
+  ) => Promise<string | null>;
 
   /**
    * Get the chart as a Blob
    */
-  getBlob: (format?: ExportFormat, options?: Omit<ExportOptions, 'format' | 'filename'>) => Promise<Blob | null>;
+  getBlob: (
+    format?: ExportFormat,
+    options?: Omit<ExportOptions, "format" | "filename">,
+  ) => Promise<Blob | null>;
 
   /**
    * Copy the chart to clipboard as image
    */
-  copyToClipboard: (options?: Omit<ExportOptions, 'format' | 'filename'>) => Promise<boolean>;
+  copyToClipboard: (
+    options?: Omit<ExportOptions, "format" | "filename">,
+  ) => Promise<boolean>;
 
   /**
    * Get the container element

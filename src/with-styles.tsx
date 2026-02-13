@@ -12,9 +12,9 @@ import "./styles/gantt.css";
  * Die Styling ist bereits enthalten und muss nicht separat importiert werden.
  * Der `darkMode` Parameter wird automatisch berücksichtigt.
  */
-const GanttChartWithStyles: React.FC<GanttChartProps> = props => {
-    // Wir leiten alle Props einfach weiter an die GanttChart-Komponente
-    return <GanttChart {...props} />;
+const GanttChartWithStyles: React.FC<GanttChartProps> = (props) => {
+  // Wir leiten alle Props einfach weiter an die GanttChart-Komponente
+  return <GanttChart {...props} />;
 };
 
 export { GanttChartWithStyles };

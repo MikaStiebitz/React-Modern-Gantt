@@ -31,61 +31,61 @@ export type { UseGanttExportReturn } from "./hooks";
 
 // Types
 export type {
-    // Core types
-    Task,
-    TaskGroup,
-    GanttStyles,
+  // Core types
+  Task,
+  TaskGroup,
+  GanttStyles,
 
-    // Component props
-    GanttChartProps,
-    TaskItemProps,
-    TaskListProps,
-    TaskRowProps,
-    TimelineProps,
-    TodayMarkerProps,
-    TooltipProps,
+  // Component props
+  GanttChartProps,
+  TaskItemProps,
+  TaskListProps,
+  TaskRowProps,
+  TimelineProps,
+  TodayMarkerProps,
+  TooltipProps,
 
-    // Render props
-    TaskRenderProps,
-    TaskListRenderProps,
-    TooltipRenderProps,
-    ViewModeSelectorRenderProps,
-    HeaderRenderProps,
-    TimelineHeaderRenderProps,
-    TaskColorProps,
+  // Render props
+  TaskRenderProps,
+  TaskListRenderProps,
+  TooltipRenderProps,
+  ViewModeSelectorRenderProps,
+  HeaderRenderProps,
+  TimelineHeaderRenderProps,
+  TaskColorProps,
 
-    // Utility types
-    TaskInteraction,
+  // Utility types
+  TaskInteraction,
 
-    // Export types
-    ExportFormat,
-    ExportOptions,
-    ExportResult,
-    PdfExportOptions,
-    GanttChartRef,
+  // Export types
+  ExportFormat,
+  ExportOptions,
+  ExportResult,
+  PdfExportOptions,
+  GanttChartRef,
 } from "./types";
 
 // Enums
 export {
-    // Enums
-    ViewMode,
-    DateDisplayFormat,
+  // Enums
+  ViewMode,
+  DateDisplayFormat,
 } from "./types";
 
 // Export utility functions for advanced usage
 export { CollisionService, TaskService, ExportService } from "./services";
 export {
-    formatDate,
-    formatMonth,
-    getMonthsBetween,
-    getDaysInMonth,
-    formatDateRange,
-    calculateDuration,
-    getDuration,
-    findEarliestDate,
-    findLatestDate,
-    calculateTaskPosition,
-    detectTaskOverlaps,
+  formatDate,
+  formatMonth,
+  getMonthsBetween,
+  getDaysInMonth,
+  formatDateRange,
+  calculateDuration,
+  getDuration,
+  findEarliestDate,
+  findLatestDate,
+  calculateTaskPosition,
+  detectTaskOverlaps,
 } from "./utils";
 
 // Export themes

@@ -5,56 +5,56 @@ import { ExportFormat } from "@/types";
  * Props for ExportPreview component
  */
 export interface ExportPreviewProps {
-    /**
-     * Whether the modal is open
-     */
-    isOpen: boolean;
+  /**
+   * Whether the modal is open
+   */
+  isOpen: boolean;
 
-    /**
-     * Callback when modal should close
-     */
-    onClose: () => void;
+  /**
+   * Callback when modal should close
+   */
+  onClose: () => void;
 
-    /**
-     * Data URL or Blob URL to preview
-     */
-    previewUrl: string | null;
+  /**
+   * Data URL or Blob URL to preview
+   */
+  previewUrl: string | null;
 
-    /**
-     * Format of the preview
-     */
-    format: ExportFormat;
+  /**
+   * Format of the preview
+   */
+  format: ExportFormat;
 
-    /**
-     * Filename for download
-     */
-    filename?: string;
+  /**
+   * Filename for download
+   */
+  filename?: string;
 
-    /**
-     * Custom title
-     */
-    title?: string;
+  /**
+   * Custom title
+   */
+  title?: string;
 
-    /**
-     * Dark mode
-     */
-    darkMode?: boolean;
+  /**
+   * Dark mode
+   */
+  darkMode?: boolean;
 
-    /**
-     * Show download button
-     * @default true
-     */
-    showDownload?: boolean;
+  /**
+   * Show download button
+   * @default true
+   */
+  showDownload?: boolean;
 
-    /**
-     * Custom className
-     */
-    className?: string;
+  /**
+   * Custom className
+   */
+  className?: string;
 
-    /**
-     * Custom styles
-     */
-    style?: React.CSSProperties;
+  /**
+   * Custom styles
+   */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -92,209 +92,216 @@ export interface ExportPreviewProps {
  * ```
  */
 export const ExportPreview: React.FC<ExportPreviewProps> = ({
-    isOpen,
-    onClose,
-    previewUrl,
-    format,
-    filename = "gantt-chart",
-    title,
-    darkMode = false,
-    showDownload = true,
-    className = "",
-    style,
+  isOpen,
+  onClose,
+  previewUrl,
+  format,
+  filename = "gantt-chart",
+  title,
+  darkMode = false,
+  showDownload = true,
+  className = "",
+  style,
 }) => {
-    const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
-    // Reset image loaded state whenever preview URL or open state changes
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-            setIsImageLoaded(false);
-        } else {
-            document.body.style.overflow = "";
-        }
+  // Reset image loaded state whenever preview URL or open state changes
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      setIsImageLoaded(false);
+    } else {
+      document.body.style.overflow = "";
+    }
 
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [isOpen, previewUrl]);
-
-    const handleDownload = () => {
-        if (!previewUrl) return;
-
-        const link = document.createElement("a");
-        link.href = previewUrl;
-        link.download = `${filename}.${format}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    return () => {
+      document.body.style.overflow = "";
     };
+  }, [isOpen, previewUrl]);
 
-    const handleBackdropClick = (e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
+  const handleDownload = () => {
+    if (!previewUrl) return;
 
-    if (!isOpen) return null;
+    const link = document.createElement("a");
+    link.href = previewUrl;
+    link.download = `${filename}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    const modalTitle = title || `Export Preview - ${format.toUpperCase()}`;
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
-    const backdropStyles: React.CSSProperties = {
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.75)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "20px",
-    };
+  if (!isOpen) return null;
 
-    const modalStyles: React.CSSProperties = {
-        backgroundColor: darkMode ? "#1f2937" : "#ffffff",
-        borderRadius: "12px",
-        maxWidth: "90vw",
-        maxHeight: "90vh",
-        display: "flex",
-        flexDirection: "column",
-        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
-        ...style,
-    };
+  const modalTitle = title || `Export Preview - ${format.toUpperCase()}`;
 
-    const headerStyles: React.CSSProperties = {
-        padding: "20px 24px",
-        borderBottom: `1px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-    };
+  const backdropStyles: React.CSSProperties = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    padding: "20px",
+  };
 
-    const titleStyles: React.CSSProperties = {
-        fontSize: "1.25rem",
-        fontWeight: 600,
-        color: darkMode ? "#f3f4f6" : "#111827",
-        margin: 0,
-    };
+  const modalStyles: React.CSSProperties = {
+    backgroundColor: darkMode ? "#1f2937" : "#ffffff",
+    borderRadius: "12px",
+    maxWidth: "90vw",
+    maxHeight: "90vh",
+    display: "flex",
+    flexDirection: "column",
+    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
+    ...style,
+  };
 
-    const closeButtonStyles: React.CSSProperties = {
-        background: "none",
-        border: "none",
-        fontSize: "1.5rem",
-        cursor: "pointer",
-        color: darkMode ? "#9ca3af" : "#6b7280",
-        padding: "4px",
-        lineHeight: 1,
-    };
+  const headerStyles: React.CSSProperties = {
+    padding: "20px 24px",
+    borderBottom: `1px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  };
 
-    const contentStyles: React.CSSProperties = {
-        flex: 1,
-        overflow: "auto",
-        padding: "24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: darkMode ? "#111827" : "#f9fafb",
-    };
+  const titleStyles: React.CSSProperties = {
+    fontSize: "1.25rem",
+    fontWeight: 600,
+    color: darkMode ? "#f3f4f6" : "#111827",
+    margin: 0,
+  };
 
-    const previewImageStyles: React.CSSProperties = {
-        maxWidth: "100%",
-        maxHeight: "100%",
-        border: `2px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
-        borderRadius: "8px",
-        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-        display: isImageLoaded ? "block" : "none",
-    };
+  const closeButtonStyles: React.CSSProperties = {
+    background: "none",
+    border: "none",
+    fontSize: "1.5rem",
+    cursor: "pointer",
+    color: darkMode ? "#9ca3af" : "#6b7280",
+    padding: "4px",
+    lineHeight: 1,
+  };
 
-    const footerStyles: React.CSSProperties = {
-        padding: "16px 24px",
-        borderTop: `1px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
-        display: "flex",
-        gap: "12px",
-        justifyContent: "flex-end",
-    };
+  const contentStyles: React.CSSProperties = {
+    flex: 1,
+    overflow: "auto",
+    padding: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: darkMode ? "#111827" : "#f9fafb",
+  };
 
-    const buttonStyles: React.CSSProperties = {
-        padding: "8px 16px",
-        borderRadius: "6px",
-        fontWeight: 500,
-        fontSize: "0.875rem",
-        cursor: "pointer",
-        border: "none",
-        transition: "all 0.2s ease",
-    };
+  const previewImageStyles: React.CSSProperties = {
+    maxWidth: "100%",
+    maxHeight: "100%",
+    border: `2px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
+    borderRadius: "8px",
+    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+    display: isImageLoaded ? "block" : "none",
+  };
 
-    const downloadButtonStyles: React.CSSProperties = {
-        ...buttonStyles,
-        backgroundColor: "#3b82f6",
-        color: "#ffffff",
-    };
+  const footerStyles: React.CSSProperties = {
+    padding: "16px 24px",
+    borderTop: `1px solid ${darkMode ? "#374151" : "#e5e7eb"}`,
+    display: "flex",
+    gap: "12px",
+    justifyContent: "flex-end",
+  };
 
-    const cancelButtonStyles: React.CSSProperties = {
-        ...buttonStyles,
-        backgroundColor: darkMode ? "#374151" : "#e5e7eb",
-        color: darkMode ? "#f3f4f6" : "#374151",
-    };
+  const buttonStyles: React.CSSProperties = {
+    padding: "8px 16px",
+    borderRadius: "6px",
+    fontWeight: 500,
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    border: "none",
+    transition: "all 0.2s ease",
+  };
 
-    const loadingStyles: React.CSSProperties = {
-        display: isImageLoaded ? "none" : "flex",
-        alignItems: "center",
-        gap: "8px",
-        color: darkMode ? "#9ca3af" : "#6b7280",
-    };
+  const downloadButtonStyles: React.CSSProperties = {
+    ...buttonStyles,
+    backgroundColor: "#3b82f6",
+    color: "#ffffff",
+  };
 
-    return (
-        <div
-            className={`rmg-export-preview-backdrop ${className}`}
-            style={backdropStyles}
-            onClick={handleBackdropClick}
-            data-rmg-component="export-preview">
-            <div className="rmg-export-preview-modal" style={modalStyles}>
-                {/* Header */}
-                <div className="rmg-export-preview-header" style={headerStyles}>
-                    <h2 style={titleStyles}>{modalTitle}</h2>
-                    <button style={closeButtonStyles} onClick={onClose} aria-label="Close preview">
-                        ×
-                    </button>
-                </div>
+  const cancelButtonStyles: React.CSSProperties = {
+    ...buttonStyles,
+    backgroundColor: darkMode ? "#374151" : "#e5e7eb",
+    color: darkMode ? "#f3f4f6" : "#374151",
+  };
 
-                {/* Content */}
-                <div className="rmg-export-preview-content" style={contentStyles}>
-                    {previewUrl ? (
-                        <>
-                            <div style={loadingStyles}>
-                                <span style={{ animation: "spin 1s linear infinite" }}>⏳</span>
-                                <span>Loading preview...</span>
-                            </div>
-                            <img
-                                src={previewUrl}
-                                alt="Export preview"
-                                style={previewImageStyles}
-                                onLoad={() => setIsImageLoaded(true)}
-                            />
-                        </>
-                    ) : (
-                        <div style={{ color: darkMode ? "#9ca3af" : "#6b7280" }}>No preview available</div>
-                    )}
-                </div>
+  const loadingStyles: React.CSSProperties = {
+    display: isImageLoaded ? "none" : "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: darkMode ? "#9ca3af" : "#6b7280",
+  };
 
-                {/* Footer */}
-                <div className="rmg-export-preview-footer" style={footerStyles}>
-                    <button style={cancelButtonStyles} onClick={onClose}>
-                        Close
-                    </button>
-                    {showDownload && previewUrl && (
-                        <button style={downloadButtonStyles} onClick={handleDownload}>
-                            📥 Download
-                        </button>
-                    )}
-                </div>
-            </div>
+  return (
+    <div
+      className={`rmg-export-preview-backdrop ${className}`}
+      style={backdropStyles}
+      onClick={handleBackdropClick}
+      data-rmg-component="export-preview"
+    >
+      <div className="rmg-export-preview-modal" style={modalStyles}>
+        {/* Header */}
+        <div className="rmg-export-preview-header" style={headerStyles}>
+          <h2 style={titleStyles}>{modalTitle}</h2>
+          <button
+            style={closeButtonStyles}
+            onClick={onClose}
+            aria-label="Close preview"
+          >
+            ×
+          </button>
         </div>
-    );
+
+        {/* Content */}
+        <div className="rmg-export-preview-content" style={contentStyles}>
+          {previewUrl ? (
+            <>
+              <div style={loadingStyles}>
+                <span style={{ animation: "spin 1s linear infinite" }}>⏳</span>
+                <span>Loading preview...</span>
+              </div>
+              <img
+                src={previewUrl}
+                alt="Export preview"
+                style={previewImageStyles}
+                onLoad={() => setIsImageLoaded(true)}
+              />
+            </>
+          ) : (
+            <div style={{ color: darkMode ? "#9ca3af" : "#6b7280" }}>
+              No preview available
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="rmg-export-preview-footer" style={footerStyles}>
+          <button style={cancelButtonStyles} onClick={onClose}>
+            Close
+          </button>
+          {showDownload && previewUrl && (
+            <button style={downloadButtonStyles} onClick={handleDownload}>
+              📥 Download
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ExportPreview;

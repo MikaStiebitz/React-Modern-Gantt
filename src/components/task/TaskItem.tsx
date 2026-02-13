@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TaskItemProps } from '@/types';
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import { TaskItemProps } from "@/types";
 
 /**
  * TaskItem Component - Renders an individual task bar in the Gantt chart
@@ -26,7 +26,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onProgressUpdate,
 }) => {
   // Show resize handles only when hovered or dragging, in edit mode, AND resizing is allowed
-  const showResizeHandles = (isHovered || isDragging) && editMode && allowTaskResize;
+  const showResizeHandles =
+    (isHovered || isDragging) && editMode && allowTaskResize;
 
   // Progress editing requires: editMode=true, showProgress=true, AND allowProgressEdit=true
   const canEditProgress = editMode && showProgress && allowProgressEdit;
@@ -44,14 +45,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
   }
 
   // Get task colors - either from custom function or default
-  let backgroundColor = task.color || 'var(--rmg-task-color)';
-  let borderColor = '';
-  let textColor = 'var(--rmg-task-text-color)';
+  let backgroundColor = task.color || "var(--rmg-task-color)";
+  let borderColor = "";
+  let textColor = "var(--rmg-task-text-color)";
 
   if (getTaskColor) {
     const colors = getTaskColor({ task, isHovered, isDragging });
     backgroundColor = colors.backgroundColor;
-    borderColor = colors.borderColor || '';
+    borderColor = colors.borderColor || "";
     textColor = colors.textColor || textColor;
   }
 
@@ -59,19 +60,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const handleResizeLeft = (e: React.MouseEvent) => {
     if (!allowTaskResize) return; // Check if resizing is allowed
     e.stopPropagation();
-    onMouseDown(e, task, 'resize-left');
+    onMouseDown(e, task, "resize-left");
   };
 
   const handleResizeRight = (e: React.MouseEvent) => {
     if (!allowTaskResize) return; // Check if resizing is allowed
     e.stopPropagation();
-    onMouseDown(e, task, 'resize-right');
+    onMouseDown(e, task, "resize-right");
   };
 
   // Handle task movement
   const handleTaskMouseDown = (e: React.MouseEvent) => {
     if (!canMoveTask) return; // Check if movement is allowed
-    onMouseDown(e, task, 'move');
+    onMouseDown(e, task, "move");
   };
 
   // Progress bubble drag handlers with improved smoothness and separated from task drag
@@ -88,7 +89,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
     // Apply a smooth transition during drag for better visual feedback
     if (progressBarRef.current) {
-      progressBarRef.current.style.transition = 'width 0.05s ease-out';
+      progressBarRef.current.style.transition = "width 0.05s ease-out";
     }
 
     // Store initial mouse position to ensure we have valid task reference
@@ -109,7 +110,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
       // Calculate new progress percentage based on mouse position
       const barWidth = taskRect.width - 2; // Account for 1px padding on each side
-      const clickX = Math.max(0, Math.min(barWidth, ev.clientX - taskRect.left));
+      const clickX = Math.max(
+        0,
+        Math.min(barWidth, ev.clientX - taskRect.left),
+      );
       const newPercent = Math.round((clickX / barWidth) * 100);
 
       // Update progress value with constraints
@@ -125,12 +129,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
       setShowProgressTooltip(false);
 
       // Remove event listeners
-      document.removeEventListener('mousemove', handleMove, true);
-      document.removeEventListener('mouseup', handleUp, true);
+      document.removeEventListener("mousemove", handleMove, true);
+      document.removeEventListener("mouseup", handleUp, true);
 
       // Reset transition after update for normal behavior
       if (progressBarRef.current) {
-        progressBarRef.current.style.transition = '';
+        progressBarRef.current.style.transition = "";
       }
 
       // Call update handler with the final progress value
@@ -140,8 +144,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
     };
 
     // Use capture phase to intercept before task handlers
-    document.addEventListener('mousemove', handleMove, true);
-    document.addEventListener('mouseup', handleUp, true);
+    document.addEventListener("mousemove", handleMove, true);
+    document.addEventListener("mouseup", handleUp, true);
   };
 
   // Update progress state when task changes
@@ -167,20 +171,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
         ref={taskRef}
         className="rmg-task-item-custom"
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: `${Math.max(0, leftPx)}px`,
           width: `${Math.max(20, widthPx)}px`,
           top: `${topPx}px`,
         }}
-        onClick={e => onClick(e, task)}
+        onClick={(e) => onClick(e, task)}
         onMouseDown={canMoveTask ? handleTaskMouseDown : undefined}
-        onMouseEnter={e => onMouseEnter(e, task)}
+        onMouseEnter={(e) => onMouseEnter(e, task)}
         onMouseLeave={onMouseLeave}
         data-testid={`task-${task.id}`}
         data-task-id={task.id}
         data-instance-id={instanceId}
-        data-dragging={isDragging ? 'true' : 'false'}
-        data-rmg-component="task">
+        data-dragging={isDragging ? "true" : "false"}
+        data-rmg-component="task"
+      >
         {customTaskContent}
       </div>
     );
@@ -191,30 +196,31 @@ const TaskItem: React.FC<TaskItemProps> = ({
     left: `${leftPx}px`,
     top: `${topPx}px`,
     width: `${widthPx}px`,
-    backgroundColor: task.color || 'var(--rmg-task-bg)',
-    cursor: isDragging ? 'grabbing' : canMoveTask ? 'grab' : 'default',
+    backgroundColor: task.color || "var(--rmg-task-bg)",
+    cursor: isDragging ? "grabbing" : canMoveTask ? "grab" : "default",
   };
 
   if (borderColor) {
     taskStyles.borderColor = borderColor;
-    taskStyles.borderWidth = '1px';
-    taskStyles.borderStyle = 'solid';
+    taskStyles.borderWidth = "1px";
+    taskStyles.borderStyle = "solid";
   }
 
   return (
     <div
       ref={taskRef}
-      className={`rmg-task-item ${isDragging ? 'rmg-task-item-dragging' : ''}`}
+      className={`rmg-task-item ${isDragging ? "rmg-task-item-dragging" : ""}`}
       style={taskStyles}
-      onClick={e => onClick(e, task)}
+      onClick={(e) => onClick(e, task)}
       onMouseDown={canMoveTask ? handleTaskMouseDown : undefined}
-      onMouseEnter={e => onMouseEnter(e, task)}
+      onMouseEnter={(e) => onMouseEnter(e, task)}
       onMouseLeave={onMouseLeave}
       data-testid={`task-${task.id}`}
       data-task-id={task.id}
       data-instance-id={instanceId}
-      data-dragging={isDragging ? 'true' : 'false'}
-      data-rmg-component="task">
+      data-dragging={isDragging ? "true" : "false"}
+      data-rmg-component="task"
+    >
       {/* Left resize handle */}
       {showResizeHandles && (
         <div
@@ -222,19 +228,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
           onMouseDown={handleResizeLeft}
           data-rmg-component="resize-handle"
           data-rmg-handle="left"
-          style={{ cursor: 'ew-resize' }}
+          style={{ cursor: "ew-resize" }}
         />
       )}
 
       {/* Task name */}
-      <div className="rmg-task-item-name">{task.name || 'Unnamed Task'}</div>
+      <div className="rmg-task-item-name">{task.name || "Unnamed Task"}</div>
 
       {/* Progress bar with interactive bubble */}
-      {showProgress && typeof progressPercent === 'number' && (
+      {showProgress && typeof progressPercent === "number" && (
         <div
           ref={progressBarRef}
           className="rmg-progress-bar"
-          onClick={e => {
+          onClick={(e) => {
             if (canEditProgress && onProgressUpdate) {
               e.stopPropagation();
               const barWidth = e.currentTarget.clientWidth;
@@ -244,23 +250,25 @@ const TaskItem: React.FC<TaskItemProps> = ({
               onProgressUpdate(task, newPercent);
             }
           }}
-          data-rmg-component="progress-bar">
+          data-rmg-component="progress-bar"
+        >
           <div
             className="rmg-progress-fill"
             style={{
               width: `${progressPercent}%`,
-              transition: isDraggingProgress ? 'none' : 'width 0.3s ease-out',
+              transition: isDraggingProgress ? "none" : "width 0.3s ease-out",
             }}
-            data-rmg-component="progress-fill">
+            data-rmg-component="progress-fill"
+          >
             {/* Progress bubble handle - IMPROVED: Better visibility and positioning */}
             {canEditProgress && (isHovered || isDraggingProgress) && (
               <>
                 <div
-                  className={`rmg-progress-handle ${isDraggingProgress ? 'rmg-progress-handle-dragging' : ''}`}
+                  className={`rmg-progress-handle ${isDraggingProgress ? "rmg-progress-handle-dragging" : ""}`}
                   onMouseDown={handleProgressMouseDown}
                   style={{
-                    cursor: 'ew-resize',
-                    pointerEvents: 'auto',
+                    cursor: "ew-resize",
+                    pointerEvents: "auto",
                     zIndex: 1000,
                   }}
                   title="Drag to adjust progress"
@@ -268,7 +276,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 />
                 {/* Progress percentage tooltip */}
                 {(showProgressTooltip || isDraggingProgress) && (
-                  <div className="rmg-progress-tooltip" data-rmg-component="progress-tooltip">
+                  <div
+                    className="rmg-progress-tooltip"
+                    data-rmg-component="progress-tooltip"
+                  >
                     {progressPercent}%
                   </div>
                 )}
@@ -285,7 +296,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           onMouseDown={handleResizeRight}
           data-rmg-component="resize-handle"
           data-rmg-handle="right"
-          style={{ cursor: 'ew-resize' }}
+          style={{ cursor: "ew-resize" }}
         />
       )}
     </div>

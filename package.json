@@ -1,6 +1,6 @@
 {
     "name": "react-modern-gantt",
-    "version": "0.7.0",
+    "version": "0.8.3",
     "description": "A modern, customizable Gantt chart component for React applications with export functionality",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
@@ -15,10 +15,10 @@
         "start": "npm run dev & npm run start:example",
         "start:example": "cd example && npm start",
         "lint": "eslint src --ext .ts,.tsx",
+        "lint:fix": "eslint src --ext .ts,.tsx --fix",
         "test": "jest",
         "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage",
-        "prepare": "npm run build"
+        "test:coverage": "jest --coverage"
     },
     "keywords": [
         "react",
@@ -57,6 +57,7 @@
         "jspdf": "^4.1.0"
     },
     "devDependencies": {
+        "@eslint/js": "^9.39.2",
         "@rollup/plugin-commonjs": "^28.0.6",
         "@rollup/plugin-node-resolve": "^16.0.1",
         "@rollup/plugin-terser": "^0.4.4",

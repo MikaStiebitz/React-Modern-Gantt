@@ -1,5 +1,5 @@
-import { Task, ViewMode } from '@/types';
-import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { Task, ViewMode } from "@/types";
+import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
 
 export class TaskService {
   /**
@@ -12,7 +12,7 @@ export class TaskService {
     endDate: Date,
     totalUnits: number,
     unitWidth: number,
-    viewMode: ViewMode = ViewMode.MONTH
+    viewMode: ViewMode = ViewMode.MONTH,
   ): { newStartDate: Date; newEndDate: Date } {
     try {
       // Make sure we're working with valid numbers
@@ -109,7 +109,7 @@ export class TaskService {
 
       return { newStartDate, newEndDate };
     } catch (error) {
-      console.error('Error calculating dates from position:', error);
+      console.error("Error calculating dates from position:", error);
       return {
         newStartDate: new Date(startDate),
         newEndDate: new Date(endDate),
@@ -120,7 +120,11 @@ export class TaskService {
   /**
    * Create an updated task with new dates
    */
-  public static createUpdatedTask(task: Task, newStartDate: Date, newEndDate: Date): Task {
+  public static createUpdatedTask(
+    task: Task,
+    newStartDate: Date,
+    newEndDate: Date,
+  ): Task {
     return {
       ...task,
       startDate: new Date(newStartDate),
@@ -137,21 +141,31 @@ export class TaskService {
     endDate: Date,
     totalUnits: number,
     unitWidth: number,
-    viewMode: ViewMode = ViewMode.MONTH
+    viewMode: ViewMode = ViewMode.MONTH,
   ): { leftPx: number; widthPx: number } {
     try {
-      if (!(task.startDate instanceof Date) || !(task.endDate instanceof Date)) {
-        throw new Error('Invalid dates in task');
+      if (
+        !(task.startDate instanceof Date) ||
+        !(task.endDate instanceof Date)
+      ) {
+        throw new Error("Invalid dates in task");
       }
 
       // Normalize dates based on view mode for consistent calculations
       let timelineStartTime = startDate.getTime();
       let timelineEndTime = endDate.getTime();
-      let taskStartTime = Math.max(task.startDate.getTime(), startDate.getTime());
+      let taskStartTime = Math.max(
+        task.startDate.getTime(),
+        startDate.getTime(),
+      );
       let taskEndTime = Math.min(task.endDate.getTime(), endDate.getTime());
 
       // Apply special handling for view modes
-      if (viewMode === ViewMode.MINUTE || viewMode === ViewMode.HOUR || viewMode === ViewMode.DAY) {
+      if (
+        viewMode === ViewMode.MINUTE ||
+        viewMode === ViewMode.HOUR ||
+        viewMode === ViewMode.DAY
+      ) {
         // Ensure consistent boundaries using appropriate precision
         let startPrecision, endPrecision;
 
@@ -168,7 +182,7 @@ export class TaskService {
             startDate.getHours(),
             0,
             0,
-            0
+            0,
           ).getTime();
 
           const endHourTime = new Date(
@@ -178,7 +192,7 @@ export class TaskService {
             endDate.getHours(),
             59,
             59,
-            999
+            999,
           ).getTime();
 
           startPrecision = startHourTime;
@@ -192,7 +206,7 @@ export class TaskService {
             0,
             0,
             0,
-            0
+            0,
           ).getTime();
 
           const endOfDayTime = new Date(
@@ -202,7 +216,7 @@ export class TaskService {
             23,
             59,
             59,
-            999
+            999,
           ).getTime();
 
           startPrecision = startOfDayTime;
@@ -221,7 +235,7 @@ export class TaskService {
             0,
             0,
             0,
-            0
+            0,
           ).getTime();
 
           const taskEndDay = new Date(
@@ -231,7 +245,7 @@ export class TaskService {
             23,
             59,
             59,
-            999
+            999,
           ).getTime();
 
           taskStartTime = taskStartDay;
@@ -267,7 +281,10 @@ export class TaskService {
       } else if (viewMode === ViewMode.DAY) {
         // Snap to day boundaries
         leftPx = Math.round(leftPx / unitWidth) * unitWidth;
-        widthPx = Math.max(unitWidth, Math.round(widthPx / unitWidth) * unitWidth);
+        widthPx = Math.max(
+          unitWidth,
+          Math.round(widthPx / unitWidth) * unitWidth,
+        );
       }
 
       // Apply view mode specific adjustments for minimum width
@@ -291,7 +308,7 @@ export class TaskService {
 
       return { leftPx, widthPx };
     } catch (error) {
-      console.error('Error calculating task position:', error);
+      console.error("Error calculating task position:", error);
       // Return a default position as fallback
       return { leftPx: 0, widthPx: 20 };
     }
@@ -306,15 +323,15 @@ export class TaskService {
     endDate: Date,
     totalUnits: number,
     unitWidth: number,
-    viewMode: ViewMode = ViewMode.MONTH
+    viewMode: ViewMode = ViewMode.MONTH,
   ): { startDate: Date; endDate: Date } {
     try {
       if (!taskEl) {
         return { startDate: new Date(startDate), endDate: new Date(endDate) };
       }
 
-      const left = parseFloat(taskEl.style.left || '0');
-      const width = parseFloat(taskEl.style.width || '0');
+      const left = parseFloat(taskEl.style.left || "0");
+      const width = parseFloat(taskEl.style.width || "0");
 
       const { newStartDate, newEndDate } = this.calculateDatesFromPosition(
         left,
@@ -323,12 +340,12 @@ export class TaskService {
         endDate,
         totalUnits,
         unitWidth,
-        viewMode
+        viewMode,
       );
 
       return { startDate: newStartDate, endDate: newEndDate };
     } catch (error) {
-      console.error('Error getting live dates:', error);
+      console.error("Error getting live dates:", error);
       return { startDate: new Date(startDate), endDate: new Date(endDate) };
     }
   }
@@ -336,7 +353,12 @@ export class TaskService {
   /**
    * Check if two date ranges overlap
    */
-  public static datesOverlap(startA: Date, endA: Date, startB: Date, endB: Date): boolean {
+  public static datesOverlap(
+    startA: Date,
+    endA: Date,
+    startB: Date,
+    endB: Date,
+  ): boolean {
     return (
       isWithinInterval(startA, { start: startB, end: endB }) ||
       isWithinInterval(endA, { start: startB, end: endB }) ||

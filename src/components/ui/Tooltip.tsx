@@ -1,9 +1,9 @@
-import React from 'react';
-import { ViewMode, TooltipRenderProps } from '@/types';
-import { TaskService } from '@/services';
-import { TooltipProps } from '@/types';
-import { format } from 'date-fns';
-import { getDuration } from '@/utils/dateUtils';
+import React from "react";
+import { ViewMode, TooltipRenderProps } from "@/types";
+import { TaskService } from "@/services";
+import { TooltipProps } from "@/types";
+import { format } from "date-fns";
+import { getDuration } from "@/utils/dateUtils";
 
 /**
  * Tooltip Component - Shows task information on hover
@@ -23,7 +23,7 @@ const Tooltip: React.FC<
   monthWidth,
   showProgress = false,
   instanceId,
-  className = '',
+  className = "",
   viewMode = ViewMode.MONTH,
   renderTooltip,
 }) => {
@@ -34,15 +34,24 @@ const Tooltip: React.FC<
   try {
     // If the task is being dragged/resized, get the live dates from element position
     const id = taskId || task.id;
-    const taskEl = document.querySelector(`[data-task-id="${id}"][data-instance-id="${instanceId}"]`) as HTMLElement;
+    const taskEl = document.querySelector(
+      `[data-task-id="${id}"][data-instance-id="${instanceId}"]`,
+    ) as HTMLElement;
 
     if (taskEl && (dragType || taskEl.style.left || taskEl.style.width)) {
-      const dates = TaskService.getLiveDatesFromElement(taskEl, startDate, endDate, totalMonths, monthWidth, viewMode);
+      const dates = TaskService.getLiveDatesFromElement(
+        taskEl,
+        startDate,
+        endDate,
+        totalMonths,
+        monthWidth,
+        viewMode,
+      );
       displayStartDate = dates.startDate;
       displayEndDate = dates.endDate;
     }
   } catch (error) {
-    console.error('Error calculating live dates for tooltip:', error);
+    console.error("Error calculating live dates for tooltip:", error);
   }
 
   // Calculate duration based on view mode
@@ -51,18 +60,18 @@ const Tooltip: React.FC<
   // Format dates based on view mode
   const formatDate = (date: Date) => {
     if (!(date instanceof Date) || isNaN(date.getTime())) {
-      return 'Invalid date';
+      return "Invalid date";
     }
 
     switch (viewMode) {
       case ViewMode.MINUTE:
-        return format(date, 'MMM d, yyyy HH:mm');
+        return format(date, "MMM d, yyyy HH:mm");
       case ViewMode.HOUR:
-        return format(date, 'MMM d, yyyy HH:00');
+        return format(date, "MMM d, yyyy HH:00");
       case ViewMode.DAY:
-        return format(date, 'EEE, MMM d, yyyy');
+        return format(date, "EEE, MMM d, yyyy");
       default:
-        return format(date, 'MMM d, yyyy');
+        return format(date, "MMM d, yyyy");
     }
   };
 
@@ -71,12 +80,12 @@ const Tooltip: React.FC<
     if (!dragType) return null;
 
     switch (dragType) {
-      case 'move':
-        return 'Moving task...';
-      case 'resize-left':
-        return 'Adjusting start date...';
-      case 'resize-right':
-        return 'Adjusting end date...';
+      case "move":
+        return "Moving task...";
+      case "resize-left":
+        return "Adjusting start date...";
+      case "resize-right":
+        return "Adjusting end date...";
       default:
         return null;
     }
@@ -93,7 +102,8 @@ const Tooltip: React.FC<
           left: `${position.x}px`,
           top: `${position.y - 40}px`,
         }}
-        data-rmg-component="tooltip">
+        data-rmg-component="tooltip"
+      >
         {renderTooltip({
           task,
           position,
@@ -114,10 +124,11 @@ const Tooltip: React.FC<
         left: `${position.x}px`,
         top: `${position.y - 40}px`,
       }}
-      data-rmg-component="tooltip">
+      data-rmg-component="tooltip"
+    >
       {/* Task name */}
       <div className="rmg-tooltip-title" data-rmg-component="tooltip-title">
-        {task.name || 'Unnamed Task'}
+        {task.name || "Unnamed Task"}
       </div>
 
       {/* Action indicator */}
@@ -131,7 +142,9 @@ const Tooltip: React.FC<
       <div className="rmg-tooltip-content" data-rmg-component="tooltip-content">
         <div className="rmg-tooltip-row" data-rmg-component="tooltip-row">
           <div className="rmg-tooltip-label">Start:</div>
-          <div className="rmg-tooltip-value">{formatDate(displayStartDate)}</div>
+          <div className="rmg-tooltip-value">
+            {formatDate(displayStartDate)}
+          </div>
         </div>
 
         <div className="rmg-tooltip-row" data-rmg-component="tooltip-row">
@@ -147,7 +160,7 @@ const Tooltip: React.FC<
         </div>
 
         {/* Show progress if enabled */}
-        {showProgress && typeof task.percent === 'number' && (
+        {showProgress && typeof task.percent === "number" && (
           <div className="rmg-tooltip-row" data-rmg-component="tooltip-row">
             <div className="rmg-tooltip-label">Progress:</div>
             <div className="rmg-tooltip-value">{task.percent}%</div>
@@ -158,7 +171,9 @@ const Tooltip: React.FC<
         {task.dependencies && task.dependencies.length > 0 && (
           <div className="rmg-tooltip-row" data-rmg-component="tooltip-row">
             <div className="rmg-tooltip-label">Dependencies:</div>
-            <div className="rmg-tooltip-value">{task.dependencies.join(', ')}</div>
+            <div className="rmg-tooltip-value">
+              {task.dependencies.join(", ")}
+            </div>
           </div>
         )}
       </div>

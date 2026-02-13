@@ -1,4 +1,4 @@
-import { ExportOptions, ExportFormat, ExportResult } from '@/types';
+import { ExportOptions, ExportFormat, ExportResult } from "@/types";
 
 /**
  * Service for exporting Gantt chart as image or PDF
@@ -8,82 +8,104 @@ export class ExportService {
   private static prepareCloneForExport(
     clonedElement: HTMLElement,
     padding: number,
-    isDark: boolean
+    isDark: boolean,
   ): void {
     clonedElement.style.padding = `${padding}px`;
     if (isDark) {
-      clonedElement.style.backgroundColor = '#1f2937';
+      clonedElement.style.backgroundColor = "#1f2937";
     }
 
-    const timelineContainer = clonedElement.querySelector<HTMLElement>('.rmg-timeline-container');
+    const timelineContainer = clonedElement.querySelector<HTMLElement>(
+      ".rmg-timeline-container",
+    );
     if (timelineContainer) {
       timelineContainer.scrollLeft = 0;
       timelineContainer.scrollTop = 0;
-      timelineContainer.style.overflow = 'visible';
-      timelineContainer.style.scrollBehavior = 'auto';
+      timelineContainer.style.overflow = "visible";
+      timelineContainer.style.scrollBehavior = "auto";
 
-      const timelineContent = timelineContainer.querySelector<HTMLElement>('.rmg-timeline-content');
+      const timelineContent = timelineContainer.querySelector<HTMLElement>(
+        ".rmg-timeline-content",
+      );
       if (timelineContent) {
         timelineContainer.style.width = `${timelineContent.scrollWidth}px`;
         timelineContainer.style.height = `${timelineContent.scrollHeight}px`;
       }
     }
 
-    const timelineGrid = clonedElement.querySelector<HTMLElement>('.rmg-timeline-grid');
+    const timelineGrid =
+      clonedElement.querySelector<HTMLElement>(".rmg-timeline-grid");
     if (timelineGrid) {
-      timelineGrid.style.transform = 'translateX(0)';
+      timelineGrid.style.transform = "translateX(0)";
     }
 
-    const taskItems = clonedElement.querySelectorAll<HTMLElement>('.rmg-task-item');
+    const taskItems =
+      clonedElement.querySelectorAll<HTMLElement>(".rmg-task-item");
     taskItems.forEach((item) => {
-      item.style.transition = 'none';
-      item.style.willChange = 'auto';
-      item.style.overflow = 'visible';
+      item.style.transition = "none";
+      item.style.willChange = "auto";
+      item.style.overflow = "visible";
     });
 
     // Fix html2canvas text rendering offset - shift task text up
-    const taskTextSelectors = ['.rmg-task-item-name', '.rmg-task-group-name', '.rmg-task-group-description'];
-    const taskTextElements = clonedElement.querySelectorAll<HTMLElement>(taskTextSelectors.join(', '));
+    const taskTextSelectors = [
+      ".rmg-task-item-name",
+      ".rmg-task-group-name",
+      ".rmg-task-group-description",
+    ];
+    const taskTextElements = clonedElement.querySelectorAll<HTMLElement>(
+      taskTextSelectors.join(", "),
+    );
     taskTextElements.forEach((el) => {
-      el.style.transform = 'translateY(-7px)';
-      el.style.overflow = 'visible';
+      el.style.transform = "translateY(-7px)";
+      el.style.overflow = "visible";
     });
 
     // Keep header text visible without transforms
-    const headerTextSelectors = ['.rmg-title', '.rmg-task-list-header', '.rmg-timeline-unit', '.rmg-today-marker-label'];
-    const headerTextElements = clonedElement.querySelectorAll<HTMLElement>(headerTextSelectors.join(', '));
+    const headerTextSelectors = [
+      ".rmg-title",
+      ".rmg-task-list-header",
+      ".rmg-timeline-unit",
+      ".rmg-today-marker-label",
+    ];
+    const headerTextElements = clonedElement.querySelectorAll<HTMLElement>(
+      headerTextSelectors.join(", "),
+    );
     headerTextElements.forEach((el) => {
-      el.style.overflow = 'visible';
+      el.style.overflow = "visible";
     });
 
     const hoverElements = clonedElement.querySelectorAll<HTMLElement>(
-      '.rmg-resize-handle, .rmg-progress-handle, .rmg-progress-tooltip, .rmg-tooltip'
+      ".rmg-resize-handle, .rmg-progress-handle, .rmg-progress-tooltip, .rmg-tooltip",
     );
     hoverElements.forEach((el) => {
-      el.style.display = 'none';
+      el.style.display = "none";
     });
 
-    const headerElement = clonedElement.querySelector<HTMLElement>('.rmg-header');
+    const headerElement =
+      clonedElement.querySelector<HTMLElement>(".rmg-header");
     if (headerElement) {
-      headerElement.style.display = 'none';
+      headerElement.style.display = "none";
     }
 
-    const todayMarker = clonedElement.querySelector<HTMLElement>('.rmg-today-marker');
+    const todayMarker =
+      clonedElement.querySelector<HTMLElement>(".rmg-today-marker");
     if (todayMarker) {
-      todayMarker.style.display = 'none';
+      todayMarker.style.display = "none";
     }
 
-    const allElements = clonedElement.querySelectorAll<HTMLElement>('*');
+    const allElements = clonedElement.querySelectorAll<HTMLElement>("*");
     allElements.forEach((el) => {
-      el.style.transition = 'none';
-      el.style.animation = 'none';
+      el.style.transition = "none";
+      el.style.animation = "none";
     });
 
-    clonedElement.style.overflow = 'visible';
+    clonedElement.style.overflow = "visible";
 
-    const rmgContainer = clonedElement.querySelector<HTMLElement>('.rmg-container');
+    const rmgContainer =
+      clonedElement.querySelector<HTMLElement>(".rmg-container");
     if (rmgContainer) {
-      rmgContainer.style.overflow = 'visible';
+      rmgContainer.style.overflow = "visible";
     }
   }
 
@@ -92,14 +114,14 @@ export class ExportService {
    */
   public static async export(
     element: HTMLElement,
-    options: ExportOptions = {}
+    options: ExportOptions = {},
   ): Promise<ExportResult> {
     const {
-      format = 'png',
-      filename = 'gantt-chart',
+      format = "png",
+      filename = "gantt-chart",
       quality = 0.95,
       scale = 2,
-      backgroundColor = '#ffffff',
+      backgroundColor = "#ffffff",
       padding = 20,
       includeTitle = true,
       pdfOptions = {},
@@ -111,12 +133,12 @@ export class ExportService {
 
       if (!html2canvas) {
         throw new Error(
-          'html2canvas is required for export functionality. ' +
-          'Please install it: npm install html2canvas'
+          "html2canvas is required for export functionality. " +
+            "Please install it: npm install html2canvas",
         );
       }
 
-      const isDark = element.classList.contains('rmg-dark');
+      const isDark = element.classList.contains("rmg-dark");
 
       // Capture the element as canvas
       const canvas = await html2canvas(element, {
@@ -134,21 +156,21 @@ export class ExportService {
 
       // Generate output based on format
       switch (format) {
-        case 'png':
+        case "png":
           return this.exportAsPng(canvas, filename);
-        case 'jpeg':
-        case 'jpg':
+        case "jpeg":
+        case "jpg":
           return this.exportAsJpeg(canvas, filename, quality);
-        case 'pdf':
+        case "pdf":
           return this.exportAsPdf(canvas, filename, pdfOptions);
         default:
           throw new Error(`Unsupported export format: ${format}`);
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Export failed',
+        error: error instanceof Error ? error.message : "Export failed",
       };
     }
   }
@@ -156,15 +178,18 @@ export class ExportService {
   /**
    * Export as PNG image
    */
-  private static exportAsPng(canvas: HTMLCanvasElement, filename: string): ExportResult {
-    const dataUrl = canvas.toDataURL('image/png');
+  private static exportAsPng(
+    canvas: HTMLCanvasElement,
+    filename: string,
+  ): ExportResult {
+    const dataUrl = canvas.toDataURL("image/png");
     this.downloadFile(dataUrl, `${filename}.png`);
 
     return {
       success: true,
       dataUrl,
       filename: `${filename}.png`,
-      format: 'png',
+      format: "png",
     };
   }
 
@@ -174,16 +199,16 @@ export class ExportService {
   private static exportAsJpeg(
     canvas: HTMLCanvasElement,
     filename: string,
-    quality: number
+    quality: number,
   ): ExportResult {
-    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
     this.downloadFile(dataUrl, `${filename}.jpg`);
 
     return {
       success: true,
       dataUrl,
       filename: `${filename}.jpg`,
-      format: 'jpeg',
+      format: "jpeg",
     };
   }
 
@@ -193,20 +218,20 @@ export class ExportService {
   private static async exportAsPdf(
     canvas: HTMLCanvasElement,
     filename: string,
-    pdfOptions: ExportOptions['pdfOptions'] = {}
+    pdfOptions: ExportOptions["pdfOptions"] = {},
   ): Promise<ExportResult> {
     const jsPDF = await this.loadJsPDF();
 
     if (!jsPDF) {
       throw new Error(
-        'jspdf is required for PDF export. ' +
-        'Please install it: npm install jspdf'
+        "jspdf is required for PDF export. " +
+          "Please install it: npm install jspdf",
       );
     }
 
     const {
-      orientation = 'landscape',
-      pageSize = 'a4',
+      orientation = "landscape",
+      pageSize = "a4",
       margins = { top: 10, right: 10, bottom: 10, left: 10 },
       title,
       author,
@@ -222,7 +247,7 @@ export class ExportService {
     // Create PDF with specified orientation
     const pdf = new jsPDF({
       orientation,
-      unit: 'mm',
+      unit: "mm",
       format: pageSize,
     });
 
@@ -266,8 +291,8 @@ export class ExportService {
     const y = margins.top + (availableHeight - finalHeight) / 2;
 
     // Add image to PDF
-    const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+    const imgData = canvas.toDataURL("image/png");
+    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
 
     // Handle multi-page export for very wide charts
     if (!fitToPage && imgWidth * (25.4 / 96) > availableWidth) {
@@ -277,12 +302,19 @@ export class ExportService {
       for (let page = 1; page < totalPages; page++) {
         pdf.addPage();
         const offsetX = -(page * availableWidth) + margins.left;
-        pdf.addImage(imgData, 'PNG', offsetX, margins.top, imgWidth * (25.4 / 96), finalHeight);
+        pdf.addImage(
+          imgData,
+          "PNG",
+          offsetX,
+          margins.top,
+          imgWidth * (25.4 / 96),
+          finalHeight,
+        );
       }
     }
 
     // Generate blob and download
-    const pdfBlob = pdf.output('blob');
+    const pdfBlob = pdf.output("blob");
     const dataUrl = URL.createObjectURL(pdfBlob);
 
     // Trigger download
@@ -292,7 +324,7 @@ export class ExportService {
       success: true,
       dataUrl,
       filename: `${filename}.pdf`,
-      format: 'pdf',
+      format: "pdf",
       blob: pdfBlob,
     };
   }
@@ -302,22 +334,22 @@ export class ExportService {
    */
   public static async getDataUrl(
     element: HTMLElement,
-    format: ExportFormat = 'png',
-    options: Omit<ExportOptions, 'format' | 'filename'> = {}
+    format: ExportFormat = "png",
+    options: Omit<ExportOptions, "format" | "filename"> = {},
   ): Promise<string | null> {
     try {
       const html2canvas = await this.loadHtml2Canvas();
 
       if (!html2canvas) {
-        throw new Error('html2canvas is required');
+        throw new Error("html2canvas is required");
       }
 
       const padding = options.padding ?? 20;
-      const isDark = element.classList.contains('rmg-dark');
+      const isDark = element.classList.contains("rmg-dark");
 
       const canvas = await html2canvas(element, {
         scale: options.scale || 2,
-        backgroundColor: options.backgroundColor || '#ffffff',
+        backgroundColor: options.backgroundColor || "#ffffff",
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -328,15 +360,15 @@ export class ExportService {
         },
       });
 
-      if (format === 'png') {
-        return canvas.toDataURL('image/png');
-      } else if (format === 'jpeg' || format === 'jpg') {
-        return canvas.toDataURL('image/jpeg', options.quality || 0.95);
+      if (format === "png") {
+        return canvas.toDataURL("image/png");
+      } else if (format === "jpeg" || format === "jpg") {
+        return canvas.toDataURL("image/jpeg", options.quality || 0.95);
       }
 
-      return canvas.toDataURL('image/png');
+      return canvas.toDataURL("image/png");
     } catch (error) {
-      console.error('Failed to get data URL:', error);
+      console.error("Failed to get data URL:", error);
       return null;
     }
   }
@@ -346,22 +378,22 @@ export class ExportService {
    */
   public static async getBlob(
     element: HTMLElement,
-    format: ExportFormat = 'png',
-    options: Omit<ExportOptions, 'format' | 'filename'> = {}
+    format: ExportFormat = "png",
+    options: Omit<ExportOptions, "format" | "filename"> = {},
   ): Promise<Blob | null> {
     try {
       const html2canvas = await this.loadHtml2Canvas();
 
       if (!html2canvas) {
-        throw new Error('html2canvas is required');
+        throw new Error("html2canvas is required");
       }
 
       const padding = options.padding ?? 20;
-      const isDark = element.classList.contains('rmg-dark');
+      const isDark = element.classList.contains("rmg-dark");
 
       const canvas = await html2canvas(element, {
         scale: options.scale || 2,
-        backgroundColor: options.backgroundColor || '#ffffff',
+        backgroundColor: options.backgroundColor || "#ffffff",
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -373,15 +405,16 @@ export class ExportService {
       });
 
       return new Promise((resolve) => {
-        const mimeType = format === 'jpeg' || format === 'jpg' ? 'image/jpeg' : 'image/png';
+        const mimeType =
+          format === "jpeg" || format === "jpg" ? "image/jpeg" : "image/png";
         canvas.toBlob(
           (blob) => resolve(blob),
           mimeType,
-          options.quality || 0.95
+          options.quality || 0.95,
         );
       });
     } catch (error) {
-      console.error('Failed to get blob:', error);
+      console.error("Failed to get blob:", error);
       return null;
     }
   }
@@ -391,29 +424,29 @@ export class ExportService {
    */
   public static async copyToClipboard(
     element: HTMLElement,
-    options: Omit<ExportOptions, 'format' | 'filename'> = {}
+    options: Omit<ExportOptions, "format" | "filename"> = {},
   ): Promise<boolean> {
     try {
-      const blob = await this.getBlob(element, 'png', options);
+      const blob = await this.getBlob(element, "png", options);
 
       if (!blob) {
-        throw new Error('Failed to create image blob');
+        throw new Error("Failed to create image blob");
       }
 
       // Check if clipboard API is available
       if (!navigator.clipboard || !navigator.clipboard.write) {
-        throw new Error('Clipboard API not available');
+        throw new Error("Clipboard API not available");
       }
 
       await navigator.clipboard.write([
         new ClipboardItem({
-          'image/png': blob,
+          "image/png": blob,
         }),
       ]);
 
       return true;
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      console.error("Failed to copy to clipboard:", error);
       return false;
     }
   }
@@ -422,7 +455,7 @@ export class ExportService {
    * Helper to download file from data URL
    */
   private static downloadFile(dataUrl: string, filename: string): void {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = dataUrl;
     link.download = filename;
     document.body.appendChild(link);
@@ -433,16 +466,18 @@ export class ExportService {
   /**
    * Dynamically load html2canvas
    */
-  private static async loadHtml2Canvas(): Promise<typeof import('html2canvas').default | null> {
+  private static async loadHtml2Canvas(): Promise<
+    typeof import("html2canvas").default | null
+  > {
     try {
       // Try to import html2canvas
-      const module = await import('html2canvas');
+      const module = await import("html2canvas");
       return module.default;
     } catch {
       // html2canvas not installed
       console.warn(
-        'html2canvas is not installed. Export functionality requires html2canvas. ' +
-        'Install it with: npm install html2canvas'
+        "html2canvas is not installed. Export functionality requires html2canvas. " +
+          "Install it with: npm install html2canvas",
       );
       return null;
     }
@@ -451,14 +486,16 @@ export class ExportService {
   /**
    * Dynamically load jsPDF
    */
-  private static async loadJsPDF(): Promise<typeof import('jspdf').jsPDF | null> {
+  private static async loadJsPDF(): Promise<
+    typeof import("jspdf").jsPDF | null
+  > {
     try {
-      const module = await import('jspdf');
+      const module = await import("jspdf");
       return module.jsPDF;
     } catch {
       console.warn(
-        'jspdf is not installed. PDF export functionality requires jspdf. ' +
-        'Install it with: npm install jspdf'
+        "jspdf is not installed. PDF export functionality requires jspdf. " +
+          "Install it with: npm install jspdf",
       );
       return null;
     }

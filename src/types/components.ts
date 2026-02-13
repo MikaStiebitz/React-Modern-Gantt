@@ -1,6 +1,6 @@
-import React from 'react';
-import { Task, TaskGroup, GanttStyles } from './core';
-import { ViewMode } from './enums';
+import React from "react";
+import { Task, TaskGroup, GanttStyles } from "./core";
+import { ViewMode } from "./enums";
 
 export interface TaskListRenderProps {
   tasks: TaskGroup[];
@@ -23,7 +23,7 @@ export interface TaskRenderProps {
 export interface TooltipRenderProps {
   task: Task;
   position: { x: number; y: number };
-  dragType: 'move' | 'resize-left' | 'resize-right' | null;
+  dragType: "move" | "resize-left" | "resize-right" | null;
   startDate: Date;
   endDate: Date;
   viewMode: ViewMode;
@@ -91,7 +91,11 @@ export interface GanttChartProps {
 
   // Infinite scroll feature
   infiniteScroll?: boolean; // Enable automatic timeline extension
-  onTimelineExtend?: (direction: 'left' | 'right', newStartDate: Date, newEndDate: Date) => void;
+  onTimelineExtend?: (
+    direction: "left" | "right",
+    newStartDate: Date,
+    newEndDate: Date,
+  ) => void;
 
   // Focus mode - automatically scroll to show "now" when switching view modes
   focusMode?: boolean; // Default: true
@@ -100,7 +104,9 @@ export interface GanttChartProps {
   renderTaskList?: (props: TaskListRenderProps) => React.ReactNode;
   renderTask?: (props: TaskRenderProps) => React.ReactNode;
   renderTooltip?: (props: TooltipRenderProps) => React.ReactNode;
-  renderViewModeSelector?: (props: ViewModeSelectorRenderProps) => React.ReactNode;
+  renderViewModeSelector?: (
+    props: ViewModeSelectorRenderProps,
+  ) => React.ReactNode;
   renderHeader?: (props: HeaderRenderProps) => React.ReactNode;
   renderTimelineHeader?: (props: TimelineHeaderRenderProps) => React.ReactNode;
   getTaskColor?: (props: TaskColorProps) => {
@@ -149,7 +155,7 @@ export interface TaskRowProps {
 
   // NEW: Infinite scroll support
   infiniteScroll?: boolean;
-  onTimelineExtend?: (direction: 'left' | 'right') => void;
+  onTimelineExtend?: (direction: "left" | "right") => void;
 
   // Custom render functions
   renderTask?: (props: TaskRenderProps) => React.ReactNode;
@@ -204,7 +210,11 @@ export interface TaskItemProps {
     textColor?: string;
   };
   renderTask?: (props: TaskRenderProps) => React.ReactNode;
-  onMouseDown: (event: React.MouseEvent, task: Task, type: 'move' | 'resize-left' | 'resize-right') => void;
+  onMouseDown: (
+    event: React.MouseEvent,
+    task: Task,
+    type: "move" | "resize-left" | "resize-right",
+  ) => void;
   onMouseEnter: (event: React.MouseEvent, task: Task) => void;
   onMouseLeave: () => void;
   onClick: (event: React.MouseEvent, task: Task) => void;
@@ -214,7 +224,7 @@ export interface TaskItemProps {
 export interface TooltipProps {
   task: Task;
   position: { x: number; y: number };
-  dragType: 'move' | 'resize-left' | 'resize-right' | null;
+  dragType: "move" | "resize-left" | "resize-right" | null;
   taskId?: string;
   startDate: Date;
   endDate: Date;
@@ -241,7 +251,7 @@ export interface TodayMarkerProps {
 // Interaction states for custom hooks
 export interface TaskInteraction {
   draggingTask: Task | null;
-  dragType: 'move' | 'resize-left' | 'resize-right' | null;
+  dragType: "move" | "resize-left" | "resize-right" | null;
   dragStartX: number;
   hoveredTask: Task | null;
   tooltipPosition: { x: number; y: number };

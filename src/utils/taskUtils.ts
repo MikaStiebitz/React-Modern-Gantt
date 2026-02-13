@@ -1,4 +1,4 @@
-import { Task } from '@/types';
+import { Task } from "@/types";
 
 /**
  * Detects task overlaps and organizes them into rows
@@ -11,12 +11,12 @@ export function detectTaskOverlaps(tasks: Task[]): Task[][] {
 
   // Filter out tasks with invalid dates
   const validTasks = tasks.filter(
-    task =>
+    (task) =>
       task &&
       task.startDate instanceof Date &&
       task.endDate instanceof Date &&
       !isNaN(task.startDate.getTime()) &&
-      !isNaN(task.endDate.getTime())
+      !isNaN(task.endDate.getTime()),
   );
 
   if (validTasks.length === 0) {
@@ -25,15 +25,18 @@ export function detectTaskOverlaps(tasks: Task[]): Task[][] {
 
   const rows: Task[][] = [];
 
-  validTasks.forEach(task => {
+  validTasks.forEach((task) => {
     let placed = false;
 
     // Check each existing row for collisions
     for (let i = 0; i < rows.length; i++) {
       // A task can be placed in this row if it doesn't overlap with ANY task in the row
-      const hasCollision = rows[i].some(existingTask => {
+      const hasCollision = rows[i].some((existingTask) => {
         // Check if date ranges overlap
-        return !(task.startDate >= existingTask.endDate || task.endDate <= existingTask.startDate);
+        return !(
+          task.startDate >= existingTask.endDate ||
+          task.endDate <= existingTask.startDate
+        );
       });
 
       // If no collision in this row, place the task here

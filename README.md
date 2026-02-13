@@ -53,6 +53,7 @@ A flexible, customizable Gantt chart component for React applications with drag-
 - 🔄 **Auto-scrolling** during drag operations
 - ⚡ **Performance optimized** for large timelines (Minute view limited to 500 intervals)
 - 🔄 **Infinite scroll** with automatic timeline extension (optional)
+- 🎯 **Focus mode** to auto-scroll to current time when switching view modes
 
 ## 📦 Installation
 
@@ -517,6 +518,7 @@ function App() {
 | `minuteStep`        | `number`                                                                       | `5`             | Interval between minute markers (Minute view only)                |
 | `infiniteScroll`    | `boolean`                                                                      | `false`         | Enables automatic timeline extension                              |
 | `onTimelineExtend`  | `(direction: 'left' \| 'right', newStartDate: Date, newEndDate: Date) => void` | -               | Callback when timeline extends (used with `infiniteScroll`)       |
+| `focusMode`         | `boolean`                                                                      | `true`          | Auto-scroll to show current time when switching view modes        |
 
 **Permission Hierarchy:**
 
@@ -532,6 +534,96 @@ function App() {
 - **Update state** in `onTimelineExtend` to persist the new timeline range
 - Consider **debouncing** if loading data to prevent excessive API calls
 - **Cache** previously loaded data to avoid re-fetching
+
+## 🎯 Focus Mode
+
+React Modern Gantt includes a **Focus Mode** feature that automatically scrolls the timeline to show the current time indicator ("now") when switching between view modes. This is especially useful when working with time-sensitive views like Hour or Minute mode.
+
+### How It Works
+
+By default (`focusMode={true}`), the timeline automatically centers on the current time whenever:
+
+- The **view mode changes** (e.g., switching from Month to Hour view)
+- The component **initially renders**
+- The **focusMode prop** is enabled
+
+### Usage Example
+
+```jsx
+import React from 'react';
+import GanttChart, { ViewMode } from 'react-modern-gantt';
+import 'react-modern-gantt/dist/index.css';
+
+function App() {
+  return (
+    <GanttChart
+      tasks={tasks}
+      viewMode={ViewMode.HOUR}
+      focusMode={true}  // Enable auto-scroll to "now"
+      showCurrentDateMarker={true}
+      todayLabel="Now"
+      viewModes={[
+        ViewMode.MINUTE,
+        ViewMode.HOUR,
+        ViewMode.DAY,
+        ViewMode.WEEK,
+        ViewMode.MONTH,
+      ]}
+    />
+  );
+}
+```
+
+### Use Cases
+
+- **Daily scheduling**: Automatically show current time when viewing hourly schedules
+- **Real-time tracking**: Keep the current time visible when monitoring active tasks
+- **Time-sensitive workflows**: Ensure users see "now" when switching between different time scales
+- **Meeting schedules**: Quickly focus on the current meeting or time slot
+
+### Props
+
+| Prop                      | Type      | Default | Description                                          |
+| ------------------------- | --------- | ------- | ---------------------------------------------------- |
+| `focusMode`               | `boolean` | `true`  | Auto-scroll to current time when switching view modes |
+| `showCurrentDateMarker`   | `boolean` | `true`  | Show/hide the current time indicator line            |
+| `todayLabel`              | `string`  | `"Today"` | Label for the current time marker                  |
+
+### Programmatic Scrolling
+
+You can also manually scroll to the current time using the ref API:
+
+```jsx
+import React, { useRef } from 'react';
+import GanttChart, { GanttChartRef } from 'react-modern-gantt';
+
+function App() {
+  const ganttRef = useRef<GanttChartRef>(null);
+
+  const handleScrollToNow = () => {
+    // Manually scroll to current time
+    ganttRef.current?.scrollToToday();
+  };
+
+  return (
+    <>
+      <button onClick={handleScrollToNow}>Go to Now</button>
+      <GanttChart
+        ref={ganttRef}
+        tasks={tasks}
+        focusMode={false}  // Disable auto-scroll, using manual control instead
+      />
+    </>
+  );
+}
+```
+
+### Best Practices
+
+- **Enabled by default**: Works great with ViewMode.HOUR or ViewMode.MINUTE
+- **Combine with current date marker**: Use `showCurrentDateMarker={true}` for visual reference
+- **Disable when not needed**: Set `focusMode={false}` for historical data or long-term planning views where current time is not relevant
+- **Manual control**: Use the `scrollToToday()` ref method for custom scroll behavior
 
 ## ⚡ Performance Optimization
 

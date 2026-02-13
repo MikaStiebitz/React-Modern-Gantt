@@ -18,8 +18,8 @@ const DemoBasic: React.FC<DemoBasicProps> = ({ darkMode }: DemoBasicProps) => {
                           ...group,
                           tasks: group.tasks.map(task => (task.id === updatedTask.id ? updatedTask : task)),
                       }
-                    : group
-            )
+                    : group,
+            ),
         );
     };
 

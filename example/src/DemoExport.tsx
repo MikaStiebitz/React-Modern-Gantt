@@ -70,6 +70,7 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
         try {
             const dataUrl = await getDataUrl("png");
             if (dataUrl) {
+                // Create a preview
                 const img = document.createElement("img");
                 img.src = dataUrl;
                 img.style.maxWidth = "300px";
@@ -77,6 +78,7 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                 img.style.borderRadius = "8px";
                 img.style.marginTop = "10px";
 
+                // Remove previous preview if exists
                 const preview = document.getElementById("preview-container");
                 if (preview) {
                     preview.innerHTML = "";
@@ -126,9 +128,11 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                 )}
             </div>
 
+            {/* Export Controls */}
             <div style={{ marginTop: "1.5rem" }}>
                 <h4 style={{ marginBottom: "0.75rem" }}>Export Options:</h4>
 
+                {/* Quick Actions - Traditional Buttons */}
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                     <button
                         onClick={() => handleExport(() => exportAsPng("gantt-chart"), "PNG")}
@@ -177,6 +181,7 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                     </button>
                 </div>
 
+                {/* Advanced Options - Collapsible */}
                 <details style={{ marginTop: "1rem" }}>
                     <summary
                         style={{
@@ -210,6 +215,7 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                 </details>
             </div>
 
+            {/* Export Status */}
             {exportStatus && (
                 <div
                     style={{
@@ -229,8 +235,10 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                 </div>
             )}
 
+            {/* Preview Container */}
             <div id="preview-container" style={{ marginTop: "1rem", textAlign: "center" }}></div>
 
+            {/* Gantt Chart with ref attached */}
             <GanttChart
                 ref={ganttRef}
                 tasks={tasks}
@@ -239,6 +247,7 @@ const DemoExport: React.FC<DemoExportProps> = ({ darkMode }) => {
                 showProgress={true}
             />
 
+            {/* Usage Instructions */}
             <div
                 style={{
                     marginTop: "2rem",

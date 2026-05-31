@@ -18,6 +18,12 @@ export interface TaskGroup {
   [key: string]: any;
 }
 
+/** A single dependency arrow from one task to another, identified by task ID. */
+export interface DependencyLink {
+  from: string;
+  to: string;
+}
+
 export interface GanttStyles {
   container?: string;
   title?: string;

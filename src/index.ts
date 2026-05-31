@@ -35,6 +35,7 @@ export type {
   Task,
   TaskGroup,
   GanttStyles,
+  DependencyLink,
 
   // Component props
   GanttChartProps,

@@ -816,6 +816,30 @@
 }
 
 /* ======================================================
+   15. Dependency Links
+   ====================================================== */
+:root {
+  --rmg-dependency-color: var(--rmg-indigo-500, #6366f1);
+}
+
+.rmg-dark {
+  --rmg-dependency-color: #818cf8; /* indigo-400 — brighter on dark bg */
+}
+
+.rmg-dependency-links {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 10;
+}
+
+.rmg-dependency-link {
+  transition: opacity 0.15s ease;
+}
+
+/* ======================================================
    16. Utility-Klassen
    ====================================================== */
 .bg-blue-500 {

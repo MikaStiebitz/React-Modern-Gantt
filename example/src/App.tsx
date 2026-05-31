@@ -8,6 +8,7 @@ import DemoExport from "./DemoExport";
 import { DemoGranularControls } from "./DemoGranularControls";
 import DemoStickyHeaders from "./DemoStickyHeaders";
 import DemoTimelineHeader from "./DemoTimelineHeader";
+import DemoDependencyLinks from "./DemoDependencyLinks";
 
 const App: React.FC = () => {
     const [darkMode, setDarkMode] = useState(false);
@@ -60,6 +61,11 @@ const App: React.FC = () => {
                     Basic Usage
                 </div>
                 <div
+                    className={`section-nav-link ${activeSection === "dependencies" ? "active" : ""}`}
+                    onClick={() => setActiveSection("dependencies")}>
+                    Dependencies
+                </div>
+                <div
                     className={`section-nav-link ${activeSection === "timelineheader" ? "active" : ""}`}
                     onClick={() => setActiveSection("timelineheader")}>
                     Timeline Header
@@ -104,6 +110,17 @@ const App: React.FC = () => {
                     reschedule them, resize them to change duration, and click on them to see details.
                 </p>
                 <DemoBasic darkMode={darkMode} />
+            </div>
+
+            <div id="section-dependencies" className="demo-section">
+                <h2 className="demo-title">Dependency Links</h2>
+                <p className="demo-description">
+                    Enable <code>showDependencyLinks</code> to visualize task dependencies as SVG arrows across the
+                    chart. Arrows connect the end of each prerequisite task to the start of its dependent, even across
+                    different groups. The arrow color is controlled by the CSS variable{" "}
+                    <code>--rmg-dependency-color</code>.
+                </p>
+                <DemoDependencyLinks darkMode={darkMode} />
             </div>
 
             <div id="section-timelineheader" className="demo-section">

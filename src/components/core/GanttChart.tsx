@@ -2,6 +2,7 @@ import React, {
   useRef,
   useState,
   useEffect,
+  useLayoutEffect,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -14,9 +15,10 @@ import {
   ExportOptions,
   ExportResult,
   ExportFormat,
+  DependencyLink,
 } from "@/types";
 import { getMonthsBetween, findEarliestDate, findLatestDate } from "@/utils";
-import { Timeline, TodayMarker } from "@/components/timeline";
+import { Timeline, TodayMarker, DependencyLinks } from "@/components/timeline";
 import { ViewModeSelector } from "@/components/ui";
 import { TaskRow, TaskList } from "@/components/task";
 import { ExportService } from "@/services/ExportService";
@@ -64,6 +66,8 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       infiniteScroll = false,
       onTimelineExtend,
       focusMode = true,
+      showDependencyLinks = false,
+      dependencyLinks,
 
       // Custom rendering functions
       renderTaskList,
@@ -103,6 +107,28 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
     // Calculate timeline bounds
     const derivedStartDate = customStartDate || findEarliestDate(tasks);
     const derivedEndDate = customEndDate || findLatestDate(tasks);
+
+    // --- Infinite scroll bookkeeping ---
+    // Guards against firing extension repeatedly while a re-render is pending.
+    const isExtendingRef = useRef<boolean>(false);
+    // When extending to the left we must preserve the viewport position, since
+    // every task's pixel offset shifts as the start date moves earlier.
+    const pendingLeftExtendRef = useRef<{
+      prevScrollWidth: number;
+      prevScrollLeft: number;
+    } | null>(null);
+    // Always-current values so the scroll listener can stay subscribed without
+    // re-binding on every render.
+    const extendStateRef = useRef({
+      startDate: derivedStartDate,
+      endDate: derivedEndDate,
+      viewMode: activeViewMode,
+    });
+    extendStateRef.current = {
+      startDate: derivedStartDate,
+      endDate: derivedEndDate,
+      viewMode: activeViewMode,
+    };
 
     // Expose export methods via ref
     useImperativeHandle(
@@ -249,26 +275,26 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       }
     };
 
-    // NEW: Infinite scroll - extend timeline when needed
+    // NEW: Infinite scroll - extend timeline when needed.
+    // Reads the latest bounds/mode from a ref so it works both from the drag
+    // auto-scroll (TaskRow) and the proactive scroll listener below.
     const handleTimelineExtension = (direction: "left" | "right") => {
       if (!infiniteScroll || !onTimelineExtend) return;
 
-      const extensionAmount = getExtensionAmount(activeViewMode);
-      let newStartDate = derivedStartDate;
-      let newEndDate = derivedEndDate;
+      const {
+        startDate: curStart,
+        endDate: curEnd,
+        viewMode: curMode,
+      } = extendStateRef.current;
+
+      const extensionAmount = getExtensionAmount(curMode);
+      let newStartDate = curStart;
+      let newEndDate = curEnd;
 
       if (direction === "left") {
-        newStartDate = subtractTimeUnits(
-          derivedStartDate,
-          extensionAmount,
-          activeViewMode,
-        );
+        newStartDate = subtractTimeUnits(curStart, extensionAmount, curMode);
       } else {
-        newEndDate = addTimeUnits(
-          derivedEndDate,
-          extensionAmount,
-          activeViewMode,
-        );
+        newEndDate = addTimeUnits(curEnd, extensionAmount, curMode);
       }
 
       onTimelineExtend(direction, newStartDate, newEndDate);
@@ -949,6 +975,104 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       return () => scrollContainer.removeEventListener("scroll", handleScroll);
     }, [scrollContainerRef.current]);
 
+    // Infinite scroll: proactively extend the timeline BEFORE the user hits the
+    // edge, so new area is already rendered and scrolling never stalls.
+    useEffect(() => {
+      const container = scrollContainerRef.current;
+      if (!container || !infiniteScroll || !onTimelineExtend) return;
+
+      let rafId = 0;
+
+      const checkExtend = () => {
+        rafId = 0;
+        if (isExtendingRef.current) return;
+
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        if (maxScroll <= 0) return;
+
+        // Start generating once the viewport gets within ~0.75 screens of an
+        // edge. Generous enough that the new units exist before they're needed.
+        const threshold = Math.max(200, container.clientWidth * 0.75);
+
+        if (container.scrollLeft >= maxScroll - threshold) {
+          isExtendingRef.current = true;
+          handleTimelineExtension("right");
+        } else if (container.scrollLeft <= threshold) {
+          isExtendingRef.current = true;
+          pendingLeftExtendRef.current = {
+            prevScrollWidth: container.scrollWidth,
+            prevScrollLeft: container.scrollLeft,
+          };
+          handleTimelineExtension("left");
+        }
+
+        // Safety: if the parent ignores/clamps the extension (no size change),
+        // release the guard so future scrolls can retry.
+        if (isExtendingRef.current) {
+          window.setTimeout(() => {
+            isExtendingRef.current = false;
+            pendingLeftExtendRef.current = null;
+          }, 500);
+        }
+      };
+
+      const onScroll = () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(checkExtend);
+      };
+
+      container.addEventListener("scroll", onScroll, { passive: true });
+      return () => {
+        container.removeEventListener("scroll", onScroll);
+        if (rafId) cancelAnimationFrame(rafId);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [infiniteScroll, onTimelineExtend]);
+
+    // After a left extension the timeline grows on the left, shifting every
+    // task right. Compensate the scroll position so the viewport stays put and
+    // tasks don't visibly jump. Runs synchronously before paint.
+    useLayoutEffect(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      if (pendingLeftExtendRef.current) {
+        const { prevScrollWidth, prevScrollLeft } =
+          pendingLeftExtendRef.current;
+        const delta = container.scrollWidth - prevScrollWidth;
+        if (delta !== 0) {
+          container.scrollLeft = prevScrollLeft + delta;
+        }
+        pendingLeftExtendRef.current = null;
+      }
+
+      // The new units have rendered — allow the next extension.
+      isExtendingRef.current = false;
+    }, [totalUnits]);
+
+    // Resolve the effective extra dependency links to pass to DependencyLinks.
+    // "auto" chains each group's tasks chronologically (by startDate).
+    // An explicit array is passed through as-is.
+    const resolvedExtraLinks: DependencyLink[] = (() => {
+      if (!dependencyLinks) return [];
+      if (dependencyLinks === "auto") {
+        const links: DependencyLink[] = [];
+        tasks.forEach((group) => {
+          if (!group || !Array.isArray(group.tasks) || group.tasks.length < 2)
+            return;
+          const sorted = [...group.tasks].sort(
+            (a, b) =>
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+          );
+          for (let i = 0; i < sorted.length - 1; i++) {
+            links.push({ from: sorted[i].id, to: sorted[i + 1].id });
+          }
+        });
+        return links;
+      }
+      return dependencyLinks;
+    })();
+
     const style: React.CSSProperties = {
       fontSize: fontSize || "inherit",
     };
@@ -1161,6 +1285,19 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                     />
                   );
                 })}
+
+                {showDependencyLinks && (
+                  <DependencyLinks
+                    key={`dep-links-${forceRender}`}
+                    tasks={tasks}
+                    startDate={derivedStartDate}
+                    endDate={derivedEndDate}
+                    totalUnits={totalUnits}
+                    unitWidth={viewUnitWidth}
+                    viewMode={activeViewMode}
+                    extraLinks={resolvedExtraLinks}
+                  />
+                )}
               </div>
             </div>
           </div>

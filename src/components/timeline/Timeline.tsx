@@ -1,6 +1,7 @@
 import React from "react";
 import { TimelineProps, ViewMode } from "@/types";
 import { format, getWeek, isValid } from "date-fns";
+import type { Locale } from "date-fns";
 
 /**
  * Timeline Component with hierarchical display for different view modes
@@ -17,9 +18,11 @@ const Timeline: React.FC<TimelineProps> = React.memo(
     showTimelineHeader = true,
   }) => {
     // Get locale object for date-fns
-    const getLocale = () => {
-      if (locale === "default") return undefined;
-      // This would use actual locale imports in a real implementation
+    // Pass a Locale object from date-fns (e.g. import { de } from 'date-fns/locale') to enable localization.
+    // Passing a plain string has no effect; use the Locale object type instead.
+    const getLocale = (): Locale | undefined => {
+      if (!locale || locale === "default") return undefined;
+      if (typeof locale === "object") return locale as Locale;
       return undefined;
     };
 

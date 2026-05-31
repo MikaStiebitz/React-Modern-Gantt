@@ -1,6 +1,7 @@
 import React from "react";
-import { Task, TaskGroup, GanttStyles } from "./core";
+import { Task, TaskGroup, GanttStyles, DependencyLink } from "./core";
 import { ViewMode } from "./enums";
+import type { Locale } from "date-fns";
 
 export interface TaskListRenderProps {
   tasks: TaskGroup[];
@@ -48,7 +49,7 @@ export interface TimelineHeaderRenderProps {
   timeUnits: Date[];
   currentUnitIndex: number;
   viewMode: ViewMode;
-  locale: string;
+  locale: string | Locale;
   unitWidth: number;
 }
 
@@ -74,7 +75,7 @@ export interface GanttChartProps {
   headerLabel?: string;
   showProgress?: boolean;
   darkMode?: boolean;
-  locale?: string;
+  locale?: string | Locale;
   styles?: GanttStyles;
   viewMode?: ViewMode;
 
@@ -99,6 +100,19 @@ export interface GanttChartProps {
 
   // Focus mode - automatically scroll to show "now" when switching view modes
   focusMode?: boolean; // Default: true
+
+  // Dependency visualization - draws SVG arrows between tasks linked via task.dependencies[]
+  showDependencyLinks?: boolean; // Default: false
+  /**
+   * Explicit dependency links or "auto" to derive them automatically.
+   *
+   * - `DependencyLink[]` — array of `{ from: taskId, to: taskId }` pairs.
+   *   Merged with any `task.dependencies[]` already set on individual tasks.
+   * - `"auto"` — each TaskGroup's tasks are chained chronologically
+   *   (end of task[n] → start of task[n+1], sorted by startDate).
+   *   Also falls back to `task.dependencies[]` on individual tasks.
+   */
+  dependencyLinks?: DependencyLink[] | "auto";
 
   // Custom rendering functions
   renderTaskList?: (props: TaskListRenderProps) => React.ReactNode;
@@ -183,7 +197,7 @@ export interface TaskListProps {
 export interface TimelineProps {
   months: Date[];
   currentMonthIndex: number;
-  locale?: string;
+  locale?: string | Locale;
   className?: string;
   viewMode?: ViewMode;
   unitWidth?: number;

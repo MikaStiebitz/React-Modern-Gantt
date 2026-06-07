@@ -11,14 +11,15 @@
         "lib": ["dom", "es6"],
         "strict": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true,
         "moduleResolution": "Node",
+        "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
+        "allowSyntheticDefaultImports": true,
         "baseUrl": ".",
         "paths": {
-            "react-modern-gantt": ["../src"]
+            "react-modern-gantt": ["../src/index.ts"],
+            "react-modern-gantt/dist/index.css": ["../src/styles/gantt.css"]
         }
     },
-    "include": ["src"],
-    "references": [{ "path": "./tsconfig.node.json" }]
+    "include": ["src"]
 }

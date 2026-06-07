@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Base styles */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-medium;
+    }
+
+    /* Dark mode styles */
+    .dark {
+        @apply bg-gray-900 text-white;
+    }
+}
+
+/* Custom syntax highlighting adjustments */
+pre[class*="language-"] {
+    @apply rounded-md text-sm;
+}
+
+.dark pre[class*="language-"] {
+    @apply bg-gray-800;
+}
+
+code {
+    @apply font-mono text-sm;
+}
+
+.dark code:not([class*="language-"]) {
+    @apply text-gray-300 bg-gray-800;
+}
+
+code:not([class*="language-"]) {
+    @apply text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded;
+}

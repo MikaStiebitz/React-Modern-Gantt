@@ -29,11 +29,19 @@ export default defineConfig({
                 find: "@",
                 replacement: resolve(__dirname, "../src"),
             },
-            // Resolve date-fns from demo/node_modules so Vercel finds it
+            // Resolve these from demo/node_modules so Vercel finds them
             // when processing library source files in ../src/
             {
                 find: "date-fns",
                 replacement: resolve(__dirname, "node_modules/date-fns"),
+            },
+            {
+                find: "html2canvas",
+                replacement: resolve(__dirname, "node_modules/html2canvas"),
+            },
+            {
+                find: "jspdf",
+                replacement: resolve(__dirname, "node_modules/jspdf"),
             },
         ],
     },

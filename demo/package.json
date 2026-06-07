@@ -20,6 +20,8 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "framer-motion": "^12.5.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.483.0",
     "prismjs": "^1.30.0",
     "react": "^19.0.0",

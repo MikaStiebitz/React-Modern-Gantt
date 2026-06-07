@@ -2,11 +2,22 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
+import { readFileSync } from "fs";
+
+// Use the library version from the branch's own package.json so the demo
+// always reflects the code it is actually building from (../src), rather than
+// whatever is published to npm as "latest".
+const libVersion = JSON.parse(
+    readFileSync(resolve(__dirname, "../package.json"), "utf-8"),
+).version;
 
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     base: "./",
+    define: {
+        __LIB_VERSION__: JSON.stringify(libVersion),
+    },
     build: {
         sourcemap: true,
         outDir: "dist",

@@ -1,11 +1,31 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Task, ViewMode, TaskRowProps } from "@/types";
-import { TaskService, CollisionService } from "@/services";
+import { CollisionService } from "@/services";
+import { TimeScale, snapStart, snapEnd, shiftByUnits, unitMs } from "@/core";
 import TaskItem from "@/components/task/TaskItem";
 import { Tooltip } from "@/components/ui";
 
+type DragType = "move" | "resize-left" | "resize-right";
+
+interface DragState {
+  task: Task;
+  type: DragType;
+  // Pixel offset (grid space) between the cursor and the grabbed edge at the
+  // moment the drag started. Captured once; combined with the *current* grid
+  // position each frame so timeline extension / scrolling can never desync it.
+  grabOffset: number;
+  origStart: Date;
+  origEnd: Date;
+}
+
 /**
- * TaskRow Component - Displays and manages tasks for a single task group
+ * TaskRow — displays and manages the tasks of a single group.
+ *
+ * All dragging happens in date-space: pointer movement is converted to a date
+ * via the shared {@link TimeScale}, snapped to the view's unit grid, and stored
+ * as preview dates. Rendering always derives pixels from dates, so the bar, the
+ * header and the stored data stay perfectly consistent — and extending the
+ * timeline mid-drag simply re-derives positions from the (unchanged) dates.
  */
 const TaskRow: React.FC<TaskRowProps> = ({
   taskGroup,
@@ -25,479 +45,194 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onTaskSelect,
   onAutoScrollChange,
   viewMode = ViewMode.MONTH,
+  minuteStep = 5,
   scrollContainerRef,
-  smoothDragging = true,
-  movementThreshold = 3,
-  animationSpeed = 0.25,
   infiniteScroll = false,
   onTimelineExtend,
   renderTask,
   renderTooltip,
   getTaskColor,
 }) => {
-  if (!taskGroup || !taskGroup.id || !Array.isArray(taskGroup.tasks)) {
-    return (
-      <div className="rmg-task-row rmg-task-row-invalid">
-        Invalid task group data
-      </div>
-    );
-  }
+  const isValidGroup =
+    !!taskGroup && !!taskGroup.id && Array.isArray(taskGroup.tasks);
+  const groupTasks: Task[] = isValidGroup ? taskGroup.tasks : [];
 
-  // Ensure valid dates
   const validStartDate = startDate instanceof Date ? startDate : new Date();
   const validEndDate = endDate instanceof Date ? endDate : new Date();
 
-  // Task interaction states
+  // Shared coordinate system for this row. Rebuilt only when the timeline
+  // bounds, view mode or unit width change.
+  const scale = useMemo(
+    () =>
+      new TimeScale(
+        viewMode,
+        validStartDate,
+        validEndDate,
+        monthWidth,
+        minuteStep,
+      ),
+    [
+      viewMode,
+      validStartDate.getTime(),
+      validEndDate.getTime(),
+      monthWidth,
+      minuteStep,
+    ],
+  );
+
   const [hoveredTask, setHoveredTask] = useState<Task | null>(null);
   const [draggingTask, setDraggingTask] = useState<Task | null>(null);
-  const [dragType, setDragType] = useState<
-    "move" | "resize-left" | "resize-right" | null
-  >(null);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [dragType, setDragType] = useState<DragType | null>(null);
   const [previewTask, setPreviewTask] = useState<Task | null>(null);
-  const [initialTaskState, setInitialTaskState] = useState<{
-    left: number;
-    width: number;
-    startDate: Date;
-    endDate: Date;
-  } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  // Animation refs
-  const animationFrameRef = useRef<number | null>(null);
-  const lastMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const targetPositionRef = useRef<{ left: number; width: number } | null>(
-    null,
-  );
-  const currentPositionRef = useRef<{ left: number; width: number } | null>(
-    null,
-  );
-  const velocityRef = useRef<{ left: number; width: number }>({
-    left: 0,
-    width: 0,
-  });
-  const lastUpdateTimeRef = useRef<number>(0);
-
-  // Auto-scrolling refs
-  const autoScrollActive = useRef<boolean>(false);
-  const autoScrollTimerRef = useRef<number | null>(null);
-  const autoScrollSpeedRef = useRef<number>(0);
-  const autoScrollDirectionRef = useRef<"left" | "right" | null>(null);
-  const timelineLimitsRef = useRef<{ minLeft: number; maxLeft: number }>({
-    minLeft: 0,
-    maxLeft: totalMonths * monthWidth,
-  });
-
-  // Refs for task interactions
   const rowRef = useRef<HTMLDivElement>(null);
-  const draggingTaskRef = useRef<Task | null>(null);
-  const previewTaskRef = useRef<Task | null>(null);
-  const taskElementRef = useRef<HTMLElement | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const previewRef = useRef<Task | null>(null);
+  const lastClientXRef = useRef(0);
+  // Always points at the latest scale so an in-flight drag (whose document
+  // listeners are closures from an earlier render) re-derives positions from
+  // the *current* timeline — essential when infinite scroll extends mid-drag.
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
 
-  // Instance ID to prevent cross-chart interactions
+  // Auto-scroll bookkeeping
+  const autoScrollRaf = useRef<number | null>(null);
+  const autoScrollDir = useRef<"left" | "right" | null>(null);
+  const autoScrollSpeed = useRef(0);
+
   const instanceId = useRef(
     `task-row-${Math.random().toString(36).substring(2, 11)}`,
   );
 
-  // Calculate if we should use smooth dragging - DISABLED for day view
-  const shouldUseSmoothDragging = smoothDragging && viewMode !== ViewMode.DAY;
+  // Collision layout (one row of bars per non-overlapping lane). During a drag
+  // the preview task replaces its original so lanes reflow live.
+  const taskRows = useMemo(
+    () =>
+      previewTask
+        ? CollisionService.getPreviewArrangement(
+            previewTask,
+            groupTasks,
+            viewMode,
+          )
+        : CollisionService.detectOverlaps(groupTasks, viewMode),
+    [previewTask, groupTasks, viewMode],
+  );
 
-  // Task update helpers
-  const updateDraggingTask = (task: Task) => {
-    const taskCopy = {
-      ...task,
-      startDate: new Date(task.startDate),
-      endDate: new Date(task.endDate),
-    };
-    setDraggingTask(taskCopy);
-    draggingTaskRef.current = taskCopy;
-  };
-
-  const updatePreviewTask = (task: Task) => {
-    const taskCopy = {
-      ...task,
-      startDate: new Date(task.startDate),
-      endDate: new Date(task.endDate),
-    };
-    setPreviewTask(taskCopy);
-    previewTaskRef.current = taskCopy;
-  };
-
-  // Calculate task rows directly in the component using state
-  const taskRows = previewTask
-    ? CollisionService.getPreviewArrangement(
-        previewTask,
-        taskGroup.tasks,
-        viewMode,
-      )
-    : CollisionService.detectOverlaps(taskGroup.tasks, viewMode);
-
-  // Calculate row height based on task arrangement
   const rowHeight = Math.max(60, taskRows.length * 40 + 20);
 
-  // Update timeline limits for auto-scrolling
-  useEffect(() => {
-    timelineLimitsRef.current = {
-      minLeft: 0,
-      maxLeft: totalMonths * monthWidth,
-    };
-  }, [totalMonths, monthWidth]);
+  // ── Drag math ──────────────────────────────────────────────────────────────
 
-  // Animation function
-  const animateTaskMovement = () => {
-    if (
-      !taskElementRef.current ||
-      !targetPositionRef.current ||
-      !currentPositionRef.current
-    ) {
-      animationFrameRef.current = null;
+  /** Cursor x in grid-content coordinates (0 = timeline start). */
+  const gridX = (clientX: number): number => {
+    if (!rowRef.current) return 0;
+    return clientX - rowRef.current.getBoundingClientRect().left;
+  };
+
+  const setPreview = (task: Task) => {
+    const copy = {
+      ...task,
+      startDate: new Date(task.startDate),
+      endDate: new Date(task.endDate),
+    };
+    previewRef.current = copy;
+    setPreviewTask(copy);
+  };
+
+  /** Recompute the preview task from the current cursor + scale. */
+  const recomputePreview = () => {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    const scale = scaleRef.current;
+    const desiredLeftPx = gridX(lastClientXRef.current) - drag.grabOffset;
+    const step = unitMs(viewMode, minuteStep);
+
+    if (drag.type === "move") {
+      // Shift both edges by a whole number of units → duration is preserved.
+      const rawStart = scale.xToDate(desiredLeftPx);
+      const deltaUnits = Math.round(
+        (rawStart.getTime() - drag.origStart.getTime()) / step,
+      );
+      const newStart = shiftByUnits(
+        drag.origStart,
+        viewMode,
+        deltaUnits,
+        minuteStep,
+      );
+      const newEnd = shiftByUnits(
+        drag.origEnd,
+        viewMode,
+        deltaUnits,
+        minuteStep,
+      );
+      setPreview({ ...drag.task, startDate: newStart, endDate: newEnd });
+    } else if (drag.type === "resize-left") {
+      let newStart = snapStart(
+        scale.xToDate(desiredLeftPx),
+        viewMode,
+        minuteStep,
+      );
+      const maxStart = snapStart(drag.origEnd, viewMode, minuteStep);
+      if (newStart.getTime() > maxStart.getTime()) newStart = maxStart;
+      setPreview({ ...drag.task, startDate: newStart, endDate: drag.origEnd });
+    } else {
+      const desiredRightPx = gridX(lastClientXRef.current) - drag.grabOffset;
+      // Right edge is exclusive: nudge inward so a boundary belongs to the
+      // column on its left.
+      let newEnd = snapEnd(
+        scale.xToDate(desiredRightPx - 0.001),
+        viewMode,
+        minuteStep,
+      );
+      const minEnd = snapEnd(drag.origStart, viewMode, minuteStep);
+      if (newEnd.getTime() < minEnd.getTime()) newEnd = minEnd;
+      setPreview({ ...drag.task, startDate: drag.origStart, endDate: newEnd });
+    }
+  };
+
+  const handleMouseDown = (
+    event: React.MouseEvent,
+    task: Task,
+    type: DragType,
+  ) => {
+    if (!editMode) return;
+    if (type === "move" && !allowTaskMove) return;
+    if ((type === "resize-left" || type === "resize-right") && !allowTaskResize)
       return;
-    }
 
-    const now = Date.now();
-    const elapsed = now - lastUpdateTimeRef.current;
-    lastUpdateTimeRef.current = now;
+    event.preventDefault();
+    event.stopPropagation();
 
-    // Smooth animation coefficient
-    const easing = animationSpeed || 0.25;
+    const origStart = new Date(task.startDate);
+    const origEnd = new Date(task.endDate);
+    const cursorGridX = gridX(event.clientX);
+    const edgePx =
+      type === "resize-right"
+        ? scale.dateToX(origEnd)
+        : scale.dateToX(origStart);
 
-    // Calculate new position with easing
-    const newLeft =
-      currentPositionRef.current.left +
-      (targetPositionRef.current.left - currentPositionRef.current.left) *
-        easing;
-    const newWidth =
-      currentPositionRef.current.width +
-      (targetPositionRef.current.width - currentPositionRef.current.width) *
-        easing;
-
-    // Update velocity for more natural animation
-    velocityRef.current.left =
-      (newLeft - currentPositionRef.current.left) / (elapsed || 16);
-    velocityRef.current.width =
-      (newWidth - currentPositionRef.current.width) / (elapsed || 16);
-
-    // Update current position
-    currentPositionRef.current = { left: newLeft, width: newWidth };
-
-    // Apply to DOM - direct DOM manipulation
-    taskElementRef.current.style.left = `${newLeft}px`;
-    taskElementRef.current.style.width = `${newWidth}px`;
-
-    // Calculate and update dates based on current position
-    if (draggingTaskRef.current) {
-      updateDatesFromPosition(newLeft, newWidth);
-    }
-
-    // Continue animation loop
-    animationFrameRef.current = requestAnimationFrame(animateTaskMovement);
-  };
-
-  // Update dates based on visual position with special Day view handling
-  const updateDatesFromPosition = (left: number, width: number) => {
-    if (!draggingTaskRef.current) return;
-
-    try {
-      // For day view, apply precise date calculation
-      if (viewMode === ViewMode.DAY) {
-        // Calculate days from start position
-        const daysFromStart = Math.round(left / monthWidth);
-
-        // Calculate exact days span
-        const daysSpan = Math.max(1, Math.round(width / monthWidth));
-
-        // Apply precise day calculations
-        const baseDate = new Date(validStartDate);
-        baseDate.setHours(0, 0, 0, 0);
-
-        const newStartDate = new Date(baseDate);
-        newStartDate.setDate(baseDate.getDate() + daysFromStart);
-        newStartDate.setHours(0, 0, 0, 0);
-
-        const newEndDate = new Date(newStartDate);
-        newEndDate.setDate(newStartDate.getDate() + daysSpan - 1);
-        newEndDate.setHours(23, 59, 59, 999);
-
-        // Ensure dates are within the timeline boundaries
-        const startTime = validStartDate.getTime();
-        const endTime = validEndDate.getTime();
-
-        const constrainedStartDate = new Date(
-          Math.max(startTime, newStartDate.getTime()),
-        );
-        const constrainedEndDate = new Date(
-          Math.min(endTime, newEndDate.getTime()),
-        );
-
-        // Create updated task with the new dates
-        const updatedTask = {
-          ...draggingTaskRef.current,
-          startDate: constrainedStartDate,
-          endDate: constrainedEndDate,
-        };
-
-        // Update preview state
-        updatePreviewTask(updatedTask);
-      } else {
-        // Use TaskService for regular calculation
-        const { newStartDate, newEndDate } =
-          TaskService.calculateDatesFromPosition(
-            left,
-            width,
-            validStartDate,
-            validEndDate,
-            totalMonths,
-            monthWidth,
-            viewMode,
-          );
-
-        const updatedTask = {
-          ...draggingTaskRef.current,
-          startDate: newStartDate,
-          endDate: newEndDate,
-        };
-
-        updatePreviewTask(updatedTask);
-      }
-    } catch (error) {
-      console.error("Error updating dates:", error);
-    }
-  };
-
-  // Auto-scroll functions
-  const checkForAutoScroll = (clientX: number) => {
-    if (!scrollContainerRef?.current || !draggingTask) return;
-
-    const container = scrollContainerRef.current;
-    const containerRect = container.getBoundingClientRect();
-
-    // Define the edge threshold area (in pixels) to trigger auto-scrolling
-    const edgeThreshold = 40;
-
-    // Reset auto-scroll direction
-    let direction: "left" | "right" | null = null;
-    let scrollSpeed = 0;
-
-    // Check if mouse is near the left edge
-    if (clientX < containerRect.left + edgeThreshold) {
-      direction = "left";
-      // Calculate scroll speed based on proximity to edge (closer = faster)
-      scrollSpeed = Math.max(
-        1,
-        Math.round((edgeThreshold - (clientX - containerRect.left)) / 10),
-      );
-    }
-    // Check if mouse is near the right edge
-    else if (clientX > containerRect.right - edgeThreshold) {
-      direction = "right";
-      // Calculate scroll speed based on proximity to edge (closer = faster)
-      scrollSpeed = Math.max(
-        1,
-        Math.round((clientX - (containerRect.right - edgeThreshold)) / 10),
-      );
-    }
-
-    // Update refs with current auto-scroll state
-    autoScrollDirectionRef.current = direction;
-    autoScrollSpeedRef.current = scrollSpeed;
-
-    // Start or stop auto-scrolling based on direction
-    if (direction && !autoScrollActive.current) {
-      startAutoScroll();
-      if (onAutoScrollChange) onAutoScrollChange(true);
-    } else if (!direction && autoScrollActive.current) {
-      stopAutoScroll();
-      if (onAutoScrollChange) onAutoScrollChange(false);
-    }
-  };
-
-  // Start auto-scrolling with infinite scroll support - IMPROVED for smoother scrolling
-  const startAutoScroll = () => {
-    if (autoScrollActive.current) return;
-
-    autoScrollActive.current = true;
-
-    // Disable smooth scroll behavior during auto-scroll for better performance
-    if (scrollContainerRef?.current) {
-      scrollContainerRef.current.style.scrollBehavior = "auto";
-    }
-
-    // Use requestAnimationFrame for smoother scrolling with easing
-    let lastTime = performance.now();
-    const doScroll = () => {
-      if (
-        !autoScrollActive.current ||
-        !scrollContainerRef?.current ||
-        !targetPositionRef.current
-      )
-        return;
-
-      const now = performance.now();
-      const deltaTime = Math.min(now - lastTime, 16); // Cap at ~60fps
-      lastTime = now;
-
-      const container = scrollContainerRef.current;
-      const direction = autoScrollDirectionRef.current;
-      const speed = autoScrollSpeedRef.current;
-
-      // Get current scroll position
-      const currentScrollLeft = container.scrollLeft;
-      // Get maximum scroll position
-      const maxScrollLeft = container.scrollWidth - container.clientWidth;
-
-      // Apply easing for smoother acceleration/deceleration
-      const easingFactor = 0.15; // Smooth interpolation
-      const frameSpeed = speed * (deltaTime / 16); // Normalize to frame time
-
-      if (direction === "left") {
-        // Check if we're at the beginning and should extend timeline
-        if (currentScrollLeft <= 0) {
-          if (infiniteScroll && onTimelineExtend) {
-            // Trigger timeline extension to the left
-            onTimelineExtend("left");
-            stopAutoScroll();
-            return;
-          }
-          stopAutoScroll();
-          return;
-        }
-
-        // Calculate actual scroll amount
-        const scrollAmount = Math.min(frameSpeed * 3, currentScrollLeft); // Faster scroll, bounded
-        const newScrollLeft = currentScrollLeft - scrollAmount;
-        container.scrollLeft = newScrollLeft;
-
-        // When scrolling left (viewport moves left), the task should move left on the timeline
-        // to stay in the same visual position relative to the mouse
-        if (targetPositionRef.current && taskElementRef.current) {
-          const currentLeft = parseFloat(
-            taskElementRef.current.style.left || "0",
-          );
-          // Move task left by the same amount we scrolled
-          const adjustedLeft = Math.max(
-            timelineLimitsRef.current.minLeft,
-            currentLeft - scrollAmount,
-          );
-          targetPositionRef.current.left = adjustedLeft;
-          if (currentPositionRef.current) {
-            currentPositionRef.current.left = adjustedLeft;
-          }
-
-          // Apply position immediately to keep task visible
-          taskElementRef.current.style.left = `${adjustedLeft}px`;
-
-          // Update dates based on new position
-          if (draggingTaskRef.current) {
-            updateDatesFromPosition(
-              adjustedLeft,
-              targetPositionRef.current.width,
-            );
-          }
-        }
-      } else if (direction === "right") {
-        // Check if we're at the end and should extend timeline
-        if (currentScrollLeft >= maxScrollLeft) {
-          if (infiniteScroll && onTimelineExtend) {
-            // Trigger timeline extension to the right
-            onTimelineExtend("right");
-            stopAutoScroll();
-            return;
-          }
-          stopAutoScroll();
-          return;
-        }
-
-        // Calculate actual scroll amount
-        const scrollAmount = Math.min(
-          frameSpeed * 3,
-          maxScrollLeft - currentScrollLeft,
-        ); // Faster scroll, bounded
-        const newScrollLeft = currentScrollLeft + scrollAmount;
-        container.scrollLeft = newScrollLeft;
-
-        // When scrolling right (viewport moves right), the task should move right on the timeline
-        // to stay in the same visual position relative to the mouse
-        if (
-          targetPositionRef.current &&
-          taskElementRef.current &&
-          initialTaskState
-        ) {
-          const currentLeft = parseFloat(
-            taskElementRef.current.style.left || "0",
-          );
-          const maxLeftPosition =
-            timelineLimitsRef.current.maxLeft - targetPositionRef.current.width;
-          // Move task right by the same amount we scrolled
-          const adjustedLeft = Math.min(
-            maxLeftPosition,
-            currentLeft + scrollAmount,
-          );
-          targetPositionRef.current.left = adjustedLeft;
-          if (currentPositionRef.current) {
-            currentPositionRef.current.left = adjustedLeft;
-          }
-
-          // Apply position immediately to keep task visible
-          taskElementRef.current.style.left = `${adjustedLeft}px`;
-
-          // Update dates based on new position
-          if (draggingTaskRef.current) {
-            updateDatesFromPosition(
-              adjustedLeft,
-              targetPositionRef.current.width,
-            );
-          }
-        }
-      }
-
-      // Continue scrolling if active
-      if (autoScrollActive.current) {
-        autoScrollTimerRef.current = requestAnimationFrame(doScroll);
-      }
+    dragRef.current = {
+      task,
+      type,
+      grabOffset: cursorGridX - edgePx,
+      origStart,
+      origEnd,
     };
+    lastClientXRef.current = event.clientX;
 
-    autoScrollTimerRef.current = requestAnimationFrame(doScroll);
+    setDraggingTask(task);
+    setDragType(type);
+    setPreview(task);
+
+    document.addEventListener("mousemove", handleDocMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Stop auto-scrolling
-  const stopAutoScroll = () => {
-    autoScrollActive.current = false;
-    if (autoScrollTimerRef.current !== null) {
-      cancelAnimationFrame(autoScrollTimerRef.current);
-      autoScrollTimerRef.current = null;
-    }
+  const handleDocMouseMove = (e: MouseEvent) => {
+    if (!dragRef.current) return;
+    lastClientXRef.current = e.clientX;
 
-    // Re-enable smooth scroll behavior after auto-scroll stops
-    if (scrollContainerRef?.current) {
-      scrollContainerRef.current.style.scrollBehavior = "";
-    }
-  };
-
-  // Task interaction handlers
-  const handleTaskClick = (event: React.MouseEvent, task: Task) => {
-    if (onTaskClick && !draggingTask) {
-      onTaskClick(task, taskGroup);
-    }
-
-    if (onTaskSelect) {
-      onTaskSelect(task, true);
-    }
-  };
-
-  const handleTaskMouseEnter = (event: React.MouseEvent, task: Task) => {
-    if (!draggingTask) {
-      setHoveredTask(task);
-      updateTooltipPosition(event);
-    }
-  };
-
-  const handleTaskMouseLeave = () => {
-    if (!draggingTask) {
-      setHoveredTask(null);
-    }
-  };
-
-  const updateTooltipPosition = (e: React.MouseEvent | MouseEvent) => {
     if (rowRef.current) {
       const rect = rowRef.current.getBoundingClientRect();
       setTooltipPosition({
@@ -505,360 +240,178 @@ const TaskRow: React.FC<TaskRowProps> = ({
         y: e.clientY - rect.top,
       });
     }
-  };
 
-  const handleMouseDown = (
-    event: React.MouseEvent,
-    task: Task,
-    type: "move" | "resize-left" | "resize-right",
-  ) => {
-    if (!editMode) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Find the task element
-    const taskEl = document.querySelector(
-      `[data-task-id="${task.id}"][data-instance-id="${instanceId.current}"]`,
-    ) as HTMLElement;
-
-    if (!taskEl) return;
-    taskElementRef.current = taskEl;
-
-    // Store the initial state
-    const initialLeft = parseFloat(taskEl.style.left || "0");
-    const initialWidth = parseFloat(taskEl.style.width || "0");
-
-    setInitialTaskState({
-      left: initialLeft,
-      width: initialWidth,
-      startDate: new Date(task.startDate),
-      endDate: new Date(task.endDate),
-    });
-
-    // Initialize animation refs
-    targetPositionRef.current = { left: initialLeft, width: initialWidth };
-    currentPositionRef.current = { left: initialLeft, width: initialWidth };
-    lastMousePositionRef.current = { x: event.clientX, y: event.clientY };
-    lastUpdateTimeRef.current = Date.now();
-    velocityRef.current = { left: 0, width: 0 };
-
-    // Update task element data attribute for styling
-    taskEl.setAttribute("data-dragging", "true");
-
-    if (shouldUseSmoothDragging) {
-      taskEl.style.transition = "none"; // We'll handle the animation manually
-    } else {
-      taskEl.style.transition = "none";
-    }
-
-    // Set up dragging state
-    setDraggingTask(task);
-    setDragType(type);
-    setDragStartX(event.clientX);
-    setPreviewTask(task);
-
-    updateDraggingTask(task);
-    updatePreviewTask(task);
-
-    // Start animation loop (only for smooth dragging)
-    if (animationFrameRef.current === null && shouldUseSmoothDragging) {
-      animationFrameRef.current = requestAnimationFrame(animateTaskMovement);
-    }
-
-    // Add global event listeners
-    document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener(
-      "mousemove",
-      handleMouseMove as unknown as EventListener,
-    );
-  };
-
-  const handleMouseMove = (e: React.MouseEvent | MouseEvent) => {
-    // Store current mouse position for animation
-    lastMousePositionRef.current = { x: e.clientX, y: e.clientY };
-
-    // Update tooltip position
-    if (e instanceof MouseEvent && hoveredTask && rowRef.current) {
-      const rect = rowRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        x: e.clientX - rect.left + 20,
-        y: e.clientY - rect.top,
-      });
-    } else if (!(e instanceof MouseEvent)) {
-      updateTooltipPosition(e as React.MouseEvent);
-    }
-
-    // Check for auto-scrolling when dragging
-    if (draggingTask && scrollContainerRef?.current) {
-      checkForAutoScroll(e.clientX);
-    }
-
-    // Handle task dragging and resizing
-    if (
-      draggingTask &&
-      dragType &&
-      initialTaskState &&
-      rowRef.current &&
-      targetPositionRef.current
-    ) {
-      try {
-        // Calculate the total movement since drag started
-        const totalDeltaX = e.clientX - dragStartX;
-
-        // Get the timeline's total width
-        const totalWidth = totalMonths * monthWidth;
-
-        // Calculate new target position based on drag type
-        let newLeft = targetPositionRef.current.left;
-        let newWidth = targetPositionRef.current.width;
-
-        switch (dragType) {
-          case "move":
-            // Move task with bounds checking
-            newLeft = Math.max(
-              0,
-              Math.min(
-                totalWidth - initialTaskState.width,
-                initialTaskState.left + totalDeltaX,
-              ),
-            );
-
-            // Special handling for day view (immediate snapping)
-            if (viewMode === ViewMode.DAY) {
-              newLeft = Math.round(newLeft / monthWidth) * monthWidth;
-            }
-            break;
-
-          case "resize-left":
-            // Resize from left with minimum width
-            const maxLeftDelta = initialTaskState.width - 20;
-            const leftDelta = Math.min(maxLeftDelta, totalDeltaX);
-
-            newLeft = Math.max(0, initialTaskState.left + leftDelta);
-
-            // Special handling for day view (immediate snapping)
-            if (viewMode === ViewMode.DAY) {
-              newLeft = Math.round(newLeft / monthWidth) * monthWidth;
-            }
-
-            // Calculate width to maintain right edge position
-            const rightEdge = initialTaskState.left + initialTaskState.width;
-            newWidth = Math.max(20, rightEdge - newLeft);
-
-            // Special handling for day view (ensure full day widths)
-            if (viewMode === ViewMode.DAY) {
-              newWidth = Math.round(newWidth / monthWidth) * monthWidth;
-              newWidth = Math.max(monthWidth, newWidth); // Minimum one day
-            }
-            break;
-
-          case "resize-right":
-            // Resize from right with minimum width
-            newWidth = Math.max(
-              20,
-              Math.min(
-                totalWidth - initialTaskState.left,
-                initialTaskState.width + totalDeltaX,
-              ),
-            );
-
-            // Special handling for day view (ensure full day widths)
-            if (viewMode === ViewMode.DAY) {
-              newWidth = Math.round(newWidth / monthWidth) * monthWidth;
-              newWidth = Math.max(monthWidth, newWidth); // Minimum one day
-            }
-            break;
-        }
-
-        // Update target position reference
-        targetPositionRef.current = { left: newLeft, width: newWidth };
-
-        // Apply position immediately for day view mode
-        if (viewMode === ViewMode.DAY && taskElementRef.current) {
-          taskElementRef.current.style.left = `${newLeft}px`;
-          taskElementRef.current.style.width = `${newWidth}px`;
-          updateDatesFromPosition(newLeft, newWidth);
-        }
-        // Start animation for smooth dragging in other view modes
-        else if (shouldUseSmoothDragging) {
-          if (animationFrameRef.current === null) {
-            lastUpdateTimeRef.current = Date.now();
-            animationFrameRef.current =
-              requestAnimationFrame(animateTaskMovement);
-          }
-        }
-        // Direct update for non-smooth non-day view modes
-        else if (taskElementRef.current) {
-          taskElementRef.current.style.left = `${newLeft}px`;
-          taskElementRef.current.style.width = `${newWidth}px`;
-          updateDatesFromPosition(newLeft, newWidth);
-        }
-      } catch (error) {
-        console.error("Error in handleMouseMove:", error);
-      }
-    }
-  };
-
-  // Finalize task positioning on mouse up with special day view handling
-  const finalizeTaskPosition = () => {
-    if (
-      !taskElementRef.current ||
-      !targetPositionRef.current ||
-      !draggingTaskRef.current
-    )
-      return;
-
-    // Get final position
-    let finalLeft = targetPositionRef.current.left;
-    let finalWidth = targetPositionRef.current.width;
-
-    // Apply snapping for final position in day mode
-    if (viewMode === ViewMode.DAY) {
-      // Snap to day grid
-      finalLeft = Math.round(finalLeft / monthWidth) * monthWidth;
-      finalWidth = Math.round(finalWidth / monthWidth) * monthWidth;
-
-      // Ensure minimum width
-      finalWidth = Math.max(monthWidth, finalWidth);
-
-      // Apply final position to element with transition
-      taskElementRef.current.style.transition =
-        "transform 0.15s ease-out, left 0.15s ease-out, width 0.15s ease-out";
-      taskElementRef.current.style.left = `${finalLeft}px`;
-      taskElementRef.current.style.width = `${finalWidth}px`;
-
-      // Update dates from the snapped position
-      updateDatesFromPosition(finalLeft, finalWidth);
-    }
-    // Apply snapping for other modes if desired
-    else if (!shouldUseSmoothDragging) {
-      taskElementRef.current.style.transition =
-        "transform 0.15s ease-out, left 0.15s ease-out, width 0.15s ease-out";
-      taskElementRef.current.style.left = `${finalLeft}px`;
-      taskElementRef.current.style.width = `${finalWidth}px`;
-    }
-
-    // Calculate final dates
-    let finalTask = previewTaskRef.current;
-    if (!finalTask) return;
-
-    // Verify final task is within timeline bounds
-    const timelineStartTime = validStartDate.getTime();
-    const timelineEndTime = validEndDate.getTime();
-
-    // Ensure task dates are within bounds
-    if (finalTask.startDate.getTime() < timelineStartTime) {
-      finalTask = {
-        ...finalTask,
-        startDate: new Date(timelineStartTime),
-      };
-    }
-
-    if (finalTask.endDate.getTime() > timelineEndTime) {
-      finalTask = {
-        ...finalTask,
-        endDate: new Date(timelineEndTime),
-      };
-    }
-
-    // Call update handler with the final task
-    if (onTaskUpdate && finalTask) {
-      try {
-        onTaskUpdate(taskGroup.id, finalTask);
-      } catch (error) {
-        console.error("Error in onTaskUpdate:", error);
-      }
-    }
+    recomputePreview();
+    checkAutoScroll(e.clientX);
   };
 
   const handleMouseUp = () => {
+    document.removeEventListener("mousemove", handleDocMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+    stopAutoScroll();
+
+    const finalTask = previewRef.current;
+    const groupId = taskGroup.id;
+
+    // Reset drag state first so the row re-renders from the real task data.
+    dragRef.current = null;
+    previewRef.current = null;
+    setDraggingTask(null);
+    setDragType(null);
+    setPreviewTask(null);
+
+    if (!finalTask || !onTaskUpdate) return;
+
+    let start = new Date(finalTask.startDate);
+    let end = new Date(finalTask.endDate);
+
+    // Keep the result inside the timeline unless the host opts into growth.
+    if (!infiniteScroll) {
+      if (start.getTime() < validStartDate.getTime())
+        start = new Date(validStartDate);
+      if (end.getTime() > validEndDate.getTime()) end = new Date(validEndDate);
+    }
+
     try {
-      // Cancel any ongoing animation
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-
-      // Finalize task position with snapping
-      finalizeTaskPosition();
-
-      // Clean up animation state
-      if (taskElementRef.current) {
-        // Reset the dragging state
-        taskElementRef.current.setAttribute("data-dragging", "false");
-
-        // Reset transitions after a short delay to allow final animation to complete
-        setTimeout(() => {
-          if (taskElementRef.current) {
-            taskElementRef.current.style.transition = "";
-          }
-        }, 200);
-      }
+      onTaskUpdate(groupId, { ...finalTask, startDate: start, endDate: end });
     } catch (error) {
-      console.error("Error in handleMouseUp:", error);
-    } finally {
-      // Stop auto-scrolling
-      stopAutoScroll();
-      if (onAutoScrollChange) onAutoScrollChange(false);
-
-      // Reset all drag states
-      setDraggingTask(null);
-      setDragType(null);
-      setPreviewTask(null);
-      setInitialTaskState(null);
-      draggingTaskRef.current = null;
-      previewTaskRef.current = null;
-      taskElementRef.current = null;
-      targetPositionRef.current = null;
-      currentPositionRef.current = null;
-
-      // Remove global event listeners
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener(
-        "mousemove",
-        handleMouseMove as unknown as EventListener,
-      );
+      console.error("Error in onTaskUpdate:", error);
     }
   };
 
-  // Handle progress update
+  // ── Auto-scroll while dragging near an edge ─────────────────────────────────
+
+  const checkAutoScroll = (clientX: number) => {
+    const container = scrollContainerRef?.current;
+    if (!container || !dragRef.current) return;
+
+    const rect = container.getBoundingClientRect();
+    const edge = 40;
+    let dir: "left" | "right" | null = null;
+    let speed = 0;
+
+    if (clientX < rect.left + edge) {
+      dir = "left";
+      speed = Math.max(1, Math.round((rect.left + edge - clientX) / 10));
+    } else if (clientX > rect.right - edge) {
+      dir = "right";
+      speed = Math.max(1, Math.round((clientX - (rect.right - edge)) / 10));
+    }
+
+    autoScrollDir.current = dir;
+    autoScrollSpeed.current = speed;
+
+    if (dir && autoScrollRaf.current === null) {
+      onAutoScrollChange?.(true);
+      autoScrollRaf.current = requestAnimationFrame(autoScrollStep);
+    } else if (!dir) {
+      stopAutoScroll();
+    }
+  };
+
+  const autoScrollStep = () => {
+    const container = scrollContainerRef?.current;
+    const dir = autoScrollDir.current;
+    if (!container || !dir || !dragRef.current) {
+      autoScrollRaf.current = null;
+      return;
+    }
+
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    const amount = autoScrollSpeed.current * 3;
+
+    if (dir === "left") {
+      if (container.scrollLeft <= 0) {
+        if (infiniteScroll && onTimelineExtend) onTimelineExtend("left");
+        stopAutoScroll();
+        return;
+      }
+      container.scrollLeft = Math.max(0, container.scrollLeft - amount);
+    } else {
+      if (container.scrollLeft >= maxScroll) {
+        if (infiniteScroll && onTimelineExtend) onTimelineExtend("right");
+        stopAutoScroll();
+        return;
+      }
+      container.scrollLeft = Math.min(maxScroll, container.scrollLeft + amount);
+    }
+
+    recomputePreview();
+    autoScrollRaf.current = requestAnimationFrame(autoScrollStep);
+  };
+
+  const stopAutoScroll = () => {
+    if (autoScrollRaf.current !== null) {
+      cancelAnimationFrame(autoScrollRaf.current);
+      autoScrollRaf.current = null;
+    }
+    autoScrollDir.current = null;
+    onAutoScrollChange?.(false);
+  };
+
+  // ── Hover / click / progress ────────────────────────────────────────────────
+
+  const handleRowMouseMove = (e: React.MouseEvent) => {
+    if (dragRef.current || !hoveredTask || !rowRef.current) return;
+    const rect = rowRef.current.getBoundingClientRect();
+    setTooltipPosition({
+      x: e.clientX - rect.left + 20,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const handleTaskClick = (_event: React.MouseEvent, task: Task) => {
+    if (dragRef.current) return;
+    onTaskClick?.(task, taskGroup);
+    onTaskSelect?.(task, true);
+  };
+
+  const handleTaskMouseEnter = (event: React.MouseEvent, task: Task) => {
+    if (dragRef.current) return;
+    setHoveredTask(task);
+    if (rowRef.current) {
+      const rect = rowRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        x: event.clientX - rect.left + 20,
+        y: event.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleTaskMouseLeave = () => {
+    if (!dragRef.current) setHoveredTask(null);
+  };
+
   const handleProgressUpdate = (task: Task, newPercent: number) => {
     if (onTaskUpdate && taskGroup.id) {
       try {
-        // Create updated task with new progress percentage
-        const updatedTask = {
-          ...task,
-          percent: newPercent,
-        };
-
-        // Call the onTaskUpdate handler with the updated task
-        onTaskUpdate(taskGroup.id, updatedTask);
+        onTaskUpdate(taskGroup.id, { ...task, percent: newPercent });
       } catch (error) {
         console.error("Error updating task progress:", error);
       }
     }
   };
 
-  // Clean up event listeners and animations on unmount
+  // Clean up listeners on unmount.
   useEffect(() => {
     return () => {
+      document.removeEventListener("mousemove", handleDocMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener(
-        "mousemove",
-        handleMouseMove as unknown as EventListener,
-      );
-      stopAutoScroll();
-
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+      if (autoScrollRaf.current !== null)
+        cancelAnimationFrame(autoScrollRaf.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle empty task groups
-  if (!taskGroup.tasks || taskGroup.tasks.length === 0) {
+  if (!isValidGroup) {
+    return (
+      <div className="rmg-task-row rmg-task-row-invalid">
+        Invalid task group data
+      </div>
+    );
+  }
+
+  if (groupTasks.length === 0) {
     return (
       <div className="rmg-task-row rmg-task-row-empty">No tasks available</div>
     );
@@ -869,9 +422,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
       className={`rmg-task-row ${className}`}
       style={{
         height: `${rowHeight}px`,
-        minWidth: `${totalMonths * monthWidth}px`,
+        minWidth: `${scale.totalWidth}px`,
       }}
-      onMouseMove={(e) => handleMouseMove(e)}
+      onMouseMove={handleRowMouseMove}
       onMouseLeave={() => setHoveredTask(null)}
       ref={rowRef}
       data-testid={`task-row-${taskGroup.id}`}
@@ -879,69 +432,52 @@ const TaskRow: React.FC<TaskRowProps> = ({
       data-rmg-component="task-row"
       data-group-id={taskGroup.id}
     >
-      {/* Render tasks by row to prevent overlaps */}
       {taskRows.map((rowTasks, rowIndex) => (
-        <React.Fragment key={`task-row-${rowIndex}`}>
+        <React.Fragment key={`lane-${rowIndex}`}>
           {rowTasks.map((task) => {
-            try {
-              if (
-                !task ||
-                !task.id ||
-                !(task.startDate instanceof Date) ||
-                !(task.endDate instanceof Date)
-              ) {
-                console.warn("Invalid task data:", task);
-                return null;
-              }
-
-              // Calculate task position
-              const { leftPx, widthPx } =
-                TaskService.calculateTaskPixelPosition(
-                  task,
-                  validStartDate,
-                  validEndDate,
-                  totalMonths,
-                  monthWidth,
-                  viewMode,
-                );
-
-              const isHovered = hoveredTask?.id === task.id;
-              const isDragging = draggingTask?.id === task.id;
-              const topPx = rowIndex * 40 + 10;
-
-              return (
-                <TaskItem
-                  key={`task-${task.id}`}
-                  task={task}
-                  leftPx={leftPx}
-                  widthPx={widthPx}
-                  topPx={topPx}
-                  isHovered={isHovered}
-                  isDragging={isDragging}
-                  editMode={editMode}
-                  allowProgressEdit={allowProgressEdit}
-                  allowTaskResize={allowTaskResize}
-                  allowTaskMove={allowTaskMove}
-                  showProgress={showProgress}
-                  instanceId={instanceId.current}
-                  onMouseDown={handleMouseDown}
-                  onMouseEnter={handleTaskMouseEnter}
-                  onMouseLeave={handleTaskMouseLeave}
-                  onClick={handleTaskClick}
-                  renderTask={renderTask}
-                  getTaskColor={getTaskColor}
-                  onProgressUpdate={handleProgressUpdate}
-                />
-              );
-            } catch (error) {
-              console.error("Error rendering task:", error);
+            if (
+              !task ||
+              !task.id ||
+              !(task.startDate instanceof Date) ||
+              !(task.endDate instanceof Date)
+            ) {
               return null;
             }
+
+            const { leftPx, widthPx } = scale.positionTask(
+              task.startDate,
+              task.endDate,
+            );
+            const isDragging = draggingTask?.id === task.id;
+
+            return (
+              <TaskItem
+                key={`task-${task.id}`}
+                task={task}
+                leftPx={leftPx}
+                widthPx={widthPx}
+                topPx={rowIndex * 40 + 10}
+                isHovered={hoveredTask?.id === task.id}
+                isDragging={isDragging}
+                editMode={editMode}
+                allowProgressEdit={allowProgressEdit}
+                allowTaskResize={allowTaskResize}
+                allowTaskMove={allowTaskMove}
+                showProgress={showProgress}
+                instanceId={instanceId.current}
+                onMouseDown={handleMouseDown}
+                onMouseEnter={handleTaskMouseEnter}
+                onMouseLeave={handleTaskMouseLeave}
+                onClick={handleTaskClick}
+                renderTask={renderTask}
+                getTaskColor={getTaskColor}
+                onProgressUpdate={handleProgressUpdate}
+              />
+            );
           })}
         </React.Fragment>
       ))}
 
-      {/* Task tooltip */}
       {(hoveredTask || draggingTask) && (
         <Tooltip
           task={previewTask || draggingTask || hoveredTask!}

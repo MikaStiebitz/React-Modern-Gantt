@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/ThemeToggle";
 import { useTheme } from "../../context/ThemeContext";
@@ -13,20 +13,11 @@ import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 const Navbar: React.FC = () => {
     const { darkMode } = useTheme();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [packageVersion, setPackageVersion] = useState<string>("");
+    // Version of the library this demo is built from (injected from the
+    // branch's package.json by Vite), so the badge reflects the local/PR code
+    // rather than whatever is published on npm as "latest".
+    const packageVersion = __LIB_VERSION__;
     const location = useLocation();
-
-    useEffect(() => {
-        // Fetch latest version from NPM registry
-        fetch("https://registry.npmjs.org/react-modern-gantt/latest")
-            .then(response => response.json())
-            .then(data => {
-                setPackageVersion(data.version);
-            })
-            .catch(error => {
-                console.error("Failed to fetch package version:", error);
-            });
-    }, []);
 
     const isActive = (path: string) => {
         return location.pathname === path;

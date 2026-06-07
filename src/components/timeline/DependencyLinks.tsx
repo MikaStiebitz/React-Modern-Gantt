@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { TaskGroup, ViewMode, DependencyLink } from "@/types";
-import { TaskService } from "@/services/TaskService";
 import { CollisionService } from "@/services/CollisionService";
+import { TimeScale } from "@/core";
 
 interface TaskPosition {
   leftPx: number;
@@ -143,6 +143,9 @@ const DependencyLinks: React.FC<DependencyLinksProps> = ({
   extraLinks = [],
 }) => {
   const links = useMemo(() => {
+    // Shared coordinate system — positions match the rendered task bars exactly.
+    const scale = new TimeScale(viewMode, startDate, endDate, unitWidth);
+
     // 1. Build a position map: taskId → pixel coords
     const positions = new Map<string, TaskPosition>();
     let cumulativeY = 0;
@@ -162,13 +165,9 @@ const DependencyLinks: React.FC<DependencyLinksProps> = ({
       taskRows.forEach((rowTasks, rowIndex) => {
         rowTasks.forEach((task) => {
           try {
-            const { leftPx, widthPx } = TaskService.calculateTaskPixelPosition(
-              task,
-              startDate,
-              endDate,
-              totalUnits,
-              unitWidth,
-              viewMode,
+            const { leftPx, widthPx } = scale.positionTask(
+              task.startDate,
+              task.endDate,
             );
             const topPx = rowIndex * 40 + 10;
             const centerY = cumulativeY + topPx + 16; // half of 32px task height

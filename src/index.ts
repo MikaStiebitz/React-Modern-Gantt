@@ -89,5 +89,18 @@ export {
   detectTaskOverlaps,
 } from "./utils";
 
+// Core coordinate system (advanced usage)
+export {
+  TimeScale,
+  buildTimeUnits,
+  addUnits,
+  shiftByUnits,
+  snapStart,
+  snapEnd,
+  unitMs,
+  getExtensionAmount,
+  defaultUnitWidth,
+} from "./core";
+
 // Export themes
 export { defaultTheme, darkTheme } from "./themes";

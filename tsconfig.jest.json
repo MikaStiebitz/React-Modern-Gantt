@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": null,
+    "declaration": false,
+    "declarationDir": null,
+    "declarationMap": false,
+    "composite": false,
+    "isolatedModules": true,
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src/**/*", "__tests__/**/*"]
+}

@@ -3,6 +3,7 @@ import React, {
   useState,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -17,25 +18,24 @@ import {
   ExportFormat,
   DependencyLink,
 } from "@/types";
-import { getMonthsBetween, findEarliestDate, findLatestDate } from "@/utils";
+import { findEarliestDate, findLatestDate } from "@/utils";
 import { Timeline, TodayMarker, DependencyLinks } from "@/components/timeline";
 import { ViewModeSelector } from "@/components/ui";
 import { TaskRow, TaskList } from "@/components/task";
 import { ExportService } from "@/services/ExportService";
-import {
-  addDays,
-  addHours,
-  addMinutes,
-  addQuarters,
-  startOfQuarter,
-  addYears,
-  startOfYear,
-} from "date-fns";
 import { CollisionService } from "@/services/CollisionService";
+import {
+  TimeScale,
+  addUnits,
+  getExtensionAmount,
+  defaultUnitWidth,
+} from "@/core";
 
 /**
- * GanttChart Component with ViewMode support and Export functionality
- * A modern, customizable Gantt chart for project timelines
+ * GanttChart — a modern, customizable Gantt chart for project timelines.
+ *
+ * A single {@link TimeScale} drives the header, the task bars, the today marker
+ * and dependency arrows, so everything stays pixel-consistent across view modes.
  */
 const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
   (
@@ -47,22 +47,22 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       currentDate = new Date(),
       showCurrentDateMarker = true,
       todayLabel = "Today",
-      editMode = true, // Global master switch - default true
-      allowProgressEdit = true, // Default true
-      allowTaskResize = true, // Default true
-      allowTaskMove = true, // Default true
+      editMode = true,
+      allowProgressEdit = true,
+      allowTaskResize = true,
+      allowTaskMove = true,
       headerLabel = "Resources",
       showProgress = false,
       darkMode = false,
       locale = "default",
       styles = {},
       viewMode = ViewMode.MONTH,
-      viewModes, // Array of allowed view modes or false to hide
-      showTimelineHeader = true, // Show hierarchical header (month/year)
+      viewModes,
+      showTimelineHeader = true,
       smoothDragging = true,
       movementThreshold = 3,
       animationSpeed = 0.25,
-      minuteStep = 5, // Default to 5-minute intervals
+      minuteStep = 5,
       infiniteScroll = false,
       onTimelineExtend,
       focusMode = true,
@@ -98,27 +98,44 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [activeViewMode, setActiveViewMode] = useState<ViewMode>(viewMode);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-    const [viewUnitWidth, setViewUnitWidth] = useState<number>(150);
+    const [viewUnitWidth, setViewUnitWidth] = useState<number>(
+      defaultUnitWidth(viewMode),
+    );
     const [isAutoScrolling, setIsAutoScrolling] = useState<boolean>(false);
-
-    // Add a forceRender counter to trigger re-renders when tasks update
-    const [forceRender, setForceRender] = useState<number>(0);
 
     // Calculate timeline bounds
     const derivedStartDate = customStartDate || findEarliestDate(tasks);
     const derivedEndDate = customEndDate || findLatestDate(tasks);
 
+    // The single coordinate system shared by every sub-component.
+    const scale = useMemo(
+      () =>
+        new TimeScale(
+          activeViewMode,
+          derivedStartDate,
+          derivedEndDate,
+          viewUnitWidth,
+          minuteStep,
+        ),
+      [
+        activeViewMode,
+        derivedStartDate.getTime(),
+        derivedEndDate.getTime(),
+        viewUnitWidth,
+        minuteStep,
+      ],
+    );
+
+    const timeUnits = scale.units;
+    const totalUnits = timeUnits.length;
+    const currentUnitIndex = scale.currentUnitIndex(new Date());
+
     // --- Infinite scroll bookkeeping ---
-    // Guards against firing extension repeatedly while a re-render is pending.
     const isExtendingRef = useRef<boolean>(false);
-    // When extending to the left we must preserve the viewport position, since
-    // every task's pixel offset shifts as the start date moves earlier.
     const pendingLeftExtendRef = useRef<{
       prevScrollWidth: number;
       prevScrollLeft: number;
     } | null>(null);
-    // Always-current values so the scroll listener can stay subscribed without
-    // re-binding on every render.
     const extendStateRef = useRef({
       startDate: derivedStartDate,
       endDate: derivedEndDate,
@@ -130,16 +147,13 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       viewMode: activeViewMode,
     };
 
-    // Expose export methods via ref
+    // Expose export / scroll methods via ref
     useImperativeHandle(
       ref,
       () => ({
         exportChart: async (options?: ExportOptions): Promise<ExportResult> => {
           if (!containerRef.current) {
-            return {
-              success: false,
-              error: "Container element not available",
-            };
+            return { success: false, error: "Container element not available" };
           }
           return ExportService.export(containerRef.current, {
             ...options,
@@ -187,97 +201,23 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
           });
         },
 
-        getContainerElement: (): HTMLDivElement | null => {
-          return containerRef.current;
-        },
+        getContainerElement: (): HTMLDivElement | null => containerRef.current,
 
         scrollToDate: (date: Date): void => {
           if (!scrollContainerRef.current) return;
-
-          const timeUnitsArray = getTimeUnitsForMode(activeViewMode);
-          const targetIndex = findDateIndex(
-            date,
-            timeUnitsArray,
-            activeViewMode,
-          );
-
-          if (targetIndex >= 0) {
-            const scrollPosition = targetIndex * viewUnitWidth;
-            scrollContainerRef.current.scrollLeft =
-              scrollPosition - scrollContainerRef.current.clientWidth / 2;
-          }
+          const x = scale.dateToX(date);
+          scrollContainerRef.current.scrollLeft =
+            x - scrollContainerRef.current.clientWidth / 2;
         },
 
         scrollToToday: (): void => {
           scrollToNow(activeViewMode, viewUnitWidth);
         },
       }),
-      [darkMode, activeViewMode, viewUnitWidth],
+      [darkMode, scale, activeViewMode, viewUnitWidth],
     );
 
-    // Helper to find date index in time units
-    const findDateIndex = (
-      date: Date,
-      timeUnits: Date[],
-      mode: ViewMode,
-    ): number => {
-      switch (mode) {
-        case ViewMode.MINUTE:
-          return timeUnits.findIndex(
-            (d) =>
-              d.getHours() === date.getHours() &&
-              Math.floor(d.getMinutes() / (minuteStep || 5)) ===
-                Math.floor(date.getMinutes() / (minuteStep || 5)) &&
-              d.getDate() === date.getDate() &&
-              d.getMonth() === date.getMonth() &&
-              d.getFullYear() === date.getFullYear(),
-          );
-        case ViewMode.HOUR:
-          return timeUnits.findIndex(
-            (d) =>
-              d.getHours() === date.getHours() &&
-              d.getDate() === date.getDate() &&
-              d.getMonth() === date.getMonth() &&
-              d.getFullYear() === date.getFullYear(),
-          );
-        case ViewMode.DAY:
-          return timeUnits.findIndex(
-            (d) =>
-              d.getDate() === date.getDate() &&
-              d.getMonth() === date.getMonth() &&
-              d.getFullYear() === date.getFullYear(),
-          );
-        case ViewMode.WEEK:
-          return timeUnits.findIndex((d) => {
-            const weekEndDate = new Date(d);
-            weekEndDate.setDate(d.getDate() + 6);
-            return date >= d && date <= weekEndDate;
-          });
-        case ViewMode.MONTH:
-          return timeUnits.findIndex(
-            (d) =>
-              d.getMonth() === date.getMonth() &&
-              d.getFullYear() === date.getFullYear(),
-          );
-        case ViewMode.QUARTER:
-          const dateQuarter = Math.floor(date.getMonth() / 3);
-          return timeUnits.findIndex(
-            (d) =>
-              Math.floor(d.getMonth() / 3) === dateQuarter &&
-              d.getFullYear() === date.getFullYear(),
-          );
-        case ViewMode.YEAR:
-          return timeUnits.findIndex(
-            (d) => d.getFullYear() === date.getFullYear(),
-          );
-        default:
-          return -1;
-      }
-    };
-
-    // NEW: Infinite scroll - extend timeline when needed.
-    // Reads the latest bounds/mode from a ref so it works both from the drag
-    // auto-scroll (TaskRow) and the proactive scroll listener below.
+    // Infinite scroll: extend the timeline by a chunk of units in a direction.
     const handleTimelineExtension = (direction: "left" | "right") => {
       if (!infiniteScroll || !onTimelineExtend) return;
 
@@ -287,306 +227,23 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         viewMode: curMode,
       } = extendStateRef.current;
 
-      const extensionAmount = getExtensionAmount(curMode);
-      let newStartDate = curStart;
-      let newEndDate = curEnd;
-
-      if (direction === "left") {
-        newStartDate = subtractTimeUnits(curStart, extensionAmount, curMode);
-      } else {
-        newEndDate = addTimeUnits(curEnd, extensionAmount, curMode);
-      }
+      const amount = getExtensionAmount(curMode);
+      const newStartDate =
+        direction === "left"
+          ? addUnits(curStart, curMode, -amount, minuteStep)
+          : curStart;
+      const newEndDate =
+        direction === "right"
+          ? addUnits(curEnd, curMode, amount, minuteStep)
+          : curEnd;
 
       onTimelineExtend(direction, newStartDate, newEndDate);
     };
 
-    // Helper to get extension amount based on view mode
-    const getExtensionAmount = (mode: ViewMode): number => {
-      switch (mode) {
-        case ViewMode.MINUTE:
-          return 60; // Add 1 hour
-        case ViewMode.HOUR:
-          return 24; // Add 1 day
-        case ViewMode.DAY:
-          return 7; // Add 1 week
-        case ViewMode.WEEK:
-          return 4; // Add 1 month
-        case ViewMode.MONTH:
-          return 3; // Add 3 months
-        case ViewMode.QUARTER:
-          return 4; // Add 1 year
-        case ViewMode.YEAR:
-          return 5; // Add 5 years
-        default:
-          return 3;
-      }
-    };
-
-    // Helper to add time units
-    const addTimeUnits = (date: Date, amount: number, mode: ViewMode): Date => {
-      switch (mode) {
-        case ViewMode.MINUTE:
-          return addMinutes(date, amount);
-        case ViewMode.HOUR:
-          return addHours(date, amount);
-        case ViewMode.DAY:
-          return addDays(date, amount);
-        case ViewMode.WEEK:
-          return addDays(date, amount * 7);
-        case ViewMode.MONTH:
-          return new Date(
-            date.getFullYear(),
-            date.getMonth() + amount,
-            date.getDate(),
-          );
-        case ViewMode.QUARTER:
-          return addQuarters(date, amount);
-        case ViewMode.YEAR:
-          return addYears(date, amount);
-        default:
-          return date;
-      }
-    };
-
-    // Helper to subtract time units
-    const subtractTimeUnits = (
-      date: Date,
-      amount: number,
-      mode: ViewMode,
-    ): Date => {
-      switch (mode) {
-        case ViewMode.MINUTE:
-          return addMinutes(date, -amount);
-        case ViewMode.HOUR:
-          return addHours(date, -amount);
-        case ViewMode.DAY:
-          return addDays(date, -amount);
-        case ViewMode.WEEK:
-          return addDays(date, -amount * 7);
-        case ViewMode.MONTH:
-          return new Date(
-            date.getFullYear(),
-            date.getMonth() - amount,
-            date.getDate(),
-          );
-        case ViewMode.QUARTER:
-          return addQuarters(date, -amount);
-        case ViewMode.YEAR:
-          return addYears(date, -amount);
-        default:
-          return date;
-      }
-    };
-
-    // Time unit calculation functions
-    const getTimeUnits = () => {
-      switch (activeViewMode) {
-        case ViewMode.MINUTE:
-          return getMinutesBetween(
-            derivedStartDate,
-            derivedEndDate,
-            minuteStep,
-          );
-        case ViewMode.HOUR:
-          return getHoursBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.DAY:
-          return getDaysBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.WEEK:
-          return getWeeksBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.MONTH:
-          return getMonthsBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.QUARTER:
-          return getQuartersBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.YEAR:
-          return getYearsBetween(derivedStartDate, derivedEndDate);
-        default:
-          return getMonthsBetween(derivedStartDate, derivedEndDate);
-      }
-    };
-
-    // Get minutes between dates with configurable step - OPTIMIZED for performance
-    const getMinutesBetween = (
-      start: Date,
-      end: Date,
-      step: number = 5,
-    ): Date[] => {
-      const minutes: Date[] = [];
-      let currentDate = new Date(start);
-      currentDate.setSeconds(0, 0);
-
-      // Round to nearest minute step
-      const currentMinutes = currentDate.getMinutes();
-      const roundedMinutes = Math.floor(currentMinutes / step) * step;
-      currentDate.setMinutes(roundedMinutes);
-
-      const endDateAdjusted = new Date(end);
-      endDateAdjusted.setMinutes(endDateAdjusted.getMinutes(), 59, 999);
-
-      // PERFORMANCE: Limit minute view to max 500 intervals to prevent lag
-      const maxIntervals = 500;
-      let intervalCount = 0;
-
-      while (currentDate <= endDateAdjusted && intervalCount < maxIntervals) {
-        minutes.push(new Date(currentDate));
-        currentDate = addMinutes(currentDate, step);
-        intervalCount++;
-      }
-
-      // If we hit the limit, warn and show reduced view
-      if (intervalCount >= maxIntervals) {
-        console.warn(
-          `Minute view limited to ${maxIntervals} intervals for performance. ` +
-            `Consider using a larger time range or switching to Hour view.`,
-        );
-      }
-
-      return minutes;
-    };
-
-    // Get hours between dates
-    const getHoursBetween = (start: Date, end: Date): Date[] => {
-      const hours: Date[] = [];
-      let currentDate = new Date(start);
-      currentDate.setMinutes(0, 0, 0);
-
-      const endDateAdjusted = new Date(end);
-      endDateAdjusted.setHours(endDateAdjusted.getHours(), 59, 59, 999);
-
-      while (currentDate <= endDateAdjusted) {
-        hours.push(new Date(currentDate));
-        currentDate = addHours(currentDate, 1);
-      }
-
-      return hours;
-    };
-
-    // Get days between dates
-    const getDaysBetween = (start: Date, end: Date): Date[] => {
-      const days: Date[] = [];
-      let currentDate = new Date(start);
-      currentDate.setHours(0, 0, 0, 0);
-
-      const endDateAdjusted = new Date(end);
-      endDateAdjusted.setHours(23, 59, 59, 999);
-
-      while (currentDate <= endDateAdjusted) {
-        days.push(new Date(currentDate));
-        currentDate = addDays(currentDate, 1);
-      }
-
-      return days;
-    };
-
-    // Get weeks between dates
-    const getWeeksBetween = (start: Date, end: Date): Date[] => {
-      const weeks: Date[] = [];
-      let currentDate = new Date(start);
-
-      while (currentDate <= end) {
-        weeks.push(new Date(currentDate));
-        currentDate = addDays(currentDate, 7);
-      }
-
-      return weeks;
-    };
-
-    // Get quarters between dates
-    const getQuartersBetween = (start: Date, end: Date): Date[] => {
-      const quarters: Date[] = [];
-      let currentDate = startOfQuarter(new Date(start));
-
-      while (currentDate <= end) {
-        quarters.push(new Date(currentDate));
-        currentDate = addQuarters(currentDate, 1);
-      }
-
-      return quarters;
-    };
-
-    // Get years between dates
-    const getYearsBetween = (start: Date, end: Date): Date[] => {
-      const years: Date[] = [];
-      let currentDate = startOfYear(new Date(start));
-
-      while (currentDate <= end) {
-        years.push(new Date(currentDate));
-        currentDate = addYears(currentDate, 1);
-      }
-
-      return years;
-    };
-
-    // Find current unit index for highlighting
-    const getCurrentUnitIndex = (): number => {
-      const today = new Date();
-
-      switch (activeViewMode) {
-        case ViewMode.MINUTE:
-          return timeUnits.findIndex(
-            (date) =>
-              date.getHours() === today.getHours() &&
-              Math.floor(date.getMinutes() / (minuteStep || 5)) ===
-                Math.floor(today.getMinutes() / (minuteStep || 5)) &&
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-        case ViewMode.HOUR:
-          return timeUnits.findIndex(
-            (date) =>
-              date.getHours() === today.getHours() &&
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-        case ViewMode.DAY:
-          return timeUnits.findIndex(
-            (date) =>
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-        case ViewMode.WEEK:
-          return timeUnits.findIndex((date) => {
-            const weekEndDate = new Date(date);
-            weekEndDate.setDate(date.getDate() + 6);
-            return today >= date && today <= weekEndDate;
-          });
-        case ViewMode.MONTH:
-          return timeUnits.findIndex(
-            (date) =>
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-        case ViewMode.QUARTER:
-          const todayQuarter = Math.floor(today.getMonth() / 3);
-          return timeUnits.findIndex(
-            (date) =>
-              Math.floor(date.getMonth() / 3) === todayQuarter &&
-              date.getFullYear() === today.getFullYear(),
-          );
-        case ViewMode.YEAR:
-          return timeUnits.findIndex(
-            (date) => date.getFullYear() === today.getFullYear(),
-          );
-        default:
-          return -1;
-      }
-    };
-
     // Get available view modes based on props
     const getAvailableViewModes = (): ViewMode[] | false => {
-      // If viewModes is explicitly set to false, return false to hide selector
-      if (viewModes === false) {
-        return false;
-      }
-
-      // If viewModes is provided as an array, use it
-      if (Array.isArray(viewModes)) {
-        return viewModes;
-      }
-
-      // Default standard view modes
+      if (viewModes === false) return false;
+      if (Array.isArray(viewModes)) return viewModes;
       return [
         ViewMode.DAY,
         ViewMode.WEEK,
@@ -596,323 +253,112 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       ];
     };
 
-    // Get time units and calculate current unit index
-    const timeUnits = getTimeUnits();
-    const totalUnits = timeUnits.length;
-    const currentUnitIndex = getCurrentUnitIndex();
-
     // Handle auto-scrolling state
     const handleAutoScrollingChange = (isScrolling: boolean) => {
       setIsAutoScrolling(isScrolling);
       if (scrollContainerRef.current) {
-        if (isScrolling) {
-          scrollContainerRef.current.classList.add("rmg-auto-scrolling");
-        } else {
-          scrollContainerRef.current.classList.remove("rmg-auto-scrolling");
-        }
+        scrollContainerRef.current.classList.toggle(
+          "rmg-auto-scrolling",
+          isScrolling,
+        );
       }
     };
 
     // Task interaction handlers
     const handleTaskUpdate = (groupId: string, updatedTask: Task) => {
-      if (onTaskUpdate) {
-        try {
-          const ensuredTask = {
-            ...updatedTask,
-            startDate:
-              updatedTask.startDate instanceof Date
-                ? updatedTask.startDate
-                : new Date(updatedTask.startDate),
-            endDate:
-              updatedTask.endDate instanceof Date
-                ? updatedTask.endDate
-                : new Date(updatedTask.endDate),
-          };
-
-          // Force a re-render to update collision detection
-          setForceRender((prev) => prev + 1);
-
-          onTaskUpdate(groupId, ensuredTask);
-        } catch (error) {
-          console.error("Error in handleTaskUpdate:", error);
-        }
+      if (!onTaskUpdate) return;
+      try {
+        const ensuredTask = {
+          ...updatedTask,
+          startDate:
+            updatedTask.startDate instanceof Date
+              ? updatedTask.startDate
+              : new Date(updatedTask.startDate),
+          endDate:
+            updatedTask.endDate instanceof Date
+              ? updatedTask.endDate
+              : new Date(updatedTask.endDate),
+        };
+        onTaskUpdate(groupId, ensuredTask);
+      } catch (error) {
+        console.error("Error in handleTaskUpdate:", error);
       }
     };
 
     const handleTaskClick = (task: Task, group: TaskGroup) => {
-      if (onTaskClick) {
-        try {
-          onTaskClick(task, group);
-        } catch (error) {
-          console.error("Error in handleTaskClick:", error);
-        }
+      try {
+        onTaskClick?.(task, group);
+      } catch (error) {
+        console.error("Error in handleTaskClick:", error);
       }
     };
 
     const handleTaskSelect = (task: Task, isSelected: boolean) => {
-      setSelectedTaskIds((prev) => {
-        if (isSelected) {
-          return [...prev, task.id];
-        } else {
-          return prev.filter((id) => id !== task.id);
-        }
-      });
-
-      if (onTaskSelect) {
-        try {
-          onTaskSelect(task, isSelected);
-        } catch (error) {
-          console.error("Error in onTaskSelect handler:", error);
-        }
+      setSelectedTaskIds((prev) =>
+        isSelected ? [...prev, task.id] : prev.filter((id) => id !== task.id),
+      );
+      try {
+        onTaskSelect?.(task, isSelected);
+      } catch (error) {
+        console.error("Error in onTaskSelect handler:", error);
       }
     };
 
-    // Calculate scroll position to center "now" in view
-    const calculateScrollToNow = (
-      mode: ViewMode,
-      unitWidth: number,
-      timeUnitsArray: Date[],
-    ): number => {
-      if (!scrollContainerRef.current || timeUnitsArray.length === 0) return 0;
-
-      const container = scrollContainerRef.current;
-      const today = new Date();
-
-      // Find the current unit index directly from timeUnits
-      let currentIndex = -1;
-      switch (mode) {
-        case ViewMode.MINUTE:
-          currentIndex = timeUnitsArray.findIndex(
-            (date) =>
-              date.getHours() === today.getHours() &&
-              Math.floor(date.getMinutes() / (minuteStep || 5)) ===
-                Math.floor(today.getMinutes() / (minuteStep || 5)) &&
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-          break;
-        case ViewMode.HOUR:
-          currentIndex = timeUnitsArray.findIndex(
-            (date) =>
-              date.getHours() === today.getHours() &&
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-          break;
-        case ViewMode.DAY:
-          currentIndex = timeUnitsArray.findIndex(
-            (date) =>
-              date.getDate() === today.getDate() &&
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-          break;
-        case ViewMode.WEEK:
-          currentIndex = timeUnitsArray.findIndex((date) => {
-            const weekEndDate = new Date(date);
-            weekEndDate.setDate(date.getDate() + 6);
-            return today >= date && today <= weekEndDate;
-          });
-          break;
-        case ViewMode.MONTH:
-          currentIndex = timeUnitsArray.findIndex(
-            (date) =>
-              date.getMonth() === today.getMonth() &&
-              date.getFullYear() === today.getFullYear(),
-          );
-          break;
-        case ViewMode.QUARTER:
-          const todayQuarter = Math.floor(today.getMonth() / 3);
-          currentIndex = timeUnitsArray.findIndex(
-            (date) =>
-              Math.floor(date.getMonth() / 3) === todayQuarter &&
-              date.getFullYear() === today.getFullYear(),
-          );
-          break;
-        case ViewMode.YEAR:
-          currentIndex = timeUnitsArray.findIndex(
-            (date) => date.getFullYear() === today.getFullYear(),
-          );
-          break;
-      }
-
-      if (currentIndex < 0) return 0;
-
-      // Calculate the position of "now" marker
-      let nowPosition = 0;
-
-      switch (mode) {
-        case ViewMode.MINUTE: {
-          const minuteOfHour = today.getMinutes();
-          const secondOfMinute = today.getSeconds();
-          const minutePosition = (minuteOfHour + secondOfMinute / 60) / 60;
-          nowPosition = currentIndex * unitWidth + unitWidth * minutePosition;
-          break;
-        }
-        case ViewMode.HOUR: {
-          const minuteOfCurrentHour = today.getMinutes();
-          const hourPosition = minuteOfCurrentHour / 60;
-          nowPosition = currentIndex * unitWidth + unitWidth * hourPosition;
-          break;
-        }
-        case ViewMode.DAY:
-          nowPosition = currentIndex * unitWidth + unitWidth / 2;
-          break;
-        case ViewMode.WEEK: {
-          const dayOfWeek = today.getDay();
-          const normalizedDayOfWeek = (dayOfWeek + 7) % 7;
-          const dayPosition = normalizedDayOfWeek / 6;
-          nowPosition = currentIndex * unitWidth + unitWidth * dayPosition;
-          break;
-        }
-        case ViewMode.MONTH: {
-          const daysInMonth = new Date(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            0,
-          ).getDate();
-          const dayPercentage = (today.getDate() - 1) / daysInMonth;
-          nowPosition = currentIndex * unitWidth + unitWidth * dayPercentage;
-          break;
-        }
-        case ViewMode.QUARTER: {
-          const monthOfQuarter = today.getMonth() % 3;
-          const monthPosition = monthOfQuarter / 3;
-          nowPosition = currentIndex * unitWidth + unitWidth * monthPosition;
-          break;
-        }
-        case ViewMode.YEAR: {
-          const monthOfYear = today.getMonth();
-          const yearMonthPosition = monthOfYear / 12;
-          nowPosition =
-            currentIndex * unitWidth + unitWidth * yearMonthPosition;
-          break;
-        }
-        default:
-          nowPosition = currentIndex * unitWidth + unitWidth / 2;
-      }
-
-      // Center the "now" position in the viewport
-      const containerWidth = container.clientWidth;
-      const scrollPosition = nowPosition - containerWidth / 2;
-
-      // Ensure we don't scroll beyond boundaries
-      const maxScroll = container.scrollWidth - containerWidth;
-      return Math.max(0, Math.min(maxScroll, scrollPosition));
-    };
-
-    // Helper to get time units for a specific view mode (used for scroll calculations)
-    const getTimeUnitsForMode = (mode: ViewMode): Date[] => {
-      switch (mode) {
-        case ViewMode.MINUTE:
-          return getMinutesBetween(
-            derivedStartDate,
-            derivedEndDate,
-            minuteStep,
-          );
-        case ViewMode.HOUR:
-          return getHoursBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.DAY:
-          return getDaysBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.WEEK:
-          return getWeeksBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.MONTH:
-          return getMonthsBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.QUARTER:
-          return getQuartersBetween(derivedStartDate, derivedEndDate);
-        case ViewMode.YEAR:
-          return getYearsBetween(derivedStartDate, derivedEndDate);
-        default:
-          return getMonthsBetween(derivedStartDate, derivedEndDate);
-      }
-    };
-
-    // Smooth scroll to "now" position
+    // Smooth-scroll so "now" is centered in the viewport.
     const scrollToNow = (mode: ViewMode, unitWidth: number) => {
-      if (!scrollContainerRef.current) {
-        return;
-      }
-
-      // Calculate timeUnits for the NEW mode directly (don't rely on state)
-      const newTimeUnits = getTimeUnitsForMode(mode);
-      const targetScroll = calculateScrollToNow(mode, unitWidth, newTimeUnits);
       const container = scrollContainerRef.current;
+      if (!container) return;
 
-      // Use smooth scroll behavior
+      const targetScale = new TimeScale(
+        mode,
+        derivedStartDate,
+        derivedEndDate,
+        unitWidth,
+        minuteStep,
+      );
+      const nowX = targetScale.dateToX(new Date());
+      const maxScroll = targetScale.totalWidth - container.clientWidth;
+      const target = Math.max(
+        0,
+        Math.min(maxScroll, nowX - container.clientWidth / 2),
+      );
+
       container.style.scrollBehavior = "smooth";
-      container.scrollLeft = targetScroll;
-
-      // Reset scroll behavior after animation completes
+      container.scrollLeft = target;
       setTimeout(() => {
-        if (container) {
-          container.style.scrollBehavior = "";
-        }
+        if (container) container.style.scrollBehavior = "";
       }, 500);
     };
 
     const handleViewModeChange = (newMode: ViewMode) => {
-      // Adjust unit width based on view mode
-      let newUnitWidth = 150;
-      switch (newMode) {
-        case ViewMode.MINUTE:
-          newUnitWidth = 60; // Wider for better visibility
-          break;
-        case ViewMode.HOUR:
-          newUnitWidth = 80; // Wider for better visibility
-          break;
-        case ViewMode.DAY:
-          newUnitWidth = 50;
-          break;
-        case ViewMode.WEEK:
-          newUnitWidth = 80;
-          break;
-        case ViewMode.MONTH:
-          newUnitWidth = 150;
-          break;
-        case ViewMode.QUARTER:
-          newUnitWidth = 180;
-          break;
-        case ViewMode.YEAR:
-          newUnitWidth = 200;
-          break;
-        default:
-          newUnitWidth = 150;
-      }
-
+      const newUnitWidth = defaultUnitWidth(newMode);
       setActiveViewMode(newMode);
       setViewUnitWidth(newUnitWidth);
+      onViewModeChange?.(newMode);
 
-      if (onViewModeChange) {
-        onViewModeChange(newMode);
-      }
-
-      // Scroll to "now" if focus mode is enabled
-      // Use requestAnimationFrame and setTimeout to ensure DOM has fully updated with new view mode
       if (focusMode) {
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            scrollToNow(newMode, newUnitWidth);
-          }, 100);
+          setTimeout(() => scrollToNow(newMode, newUnitWidth), 100);
         });
       }
     };
 
-    // Initialize view mode
+    // Initialize view mode when the prop changes
     useEffect(() => {
       handleViewModeChange(viewMode);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [viewMode]);
 
     // Scroll to "now" when focus mode is initially enabled
     useEffect(() => {
       if (focusMode && scrollContainerRef.current) {
-        // Use a small delay to ensure DOM has updated after initial render
-        const timeoutId = setTimeout(() => {
-          scrollToNow(activeViewMode, viewUnitWidth);
-        }, 300);
+        const timeoutId = setTimeout(
+          () => scrollToNow(activeViewMode, viewUnitWidth),
+          300,
+        );
         return () => clearTimeout(timeoutId);
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [focusMode]);
 
     // Apply custom animation speed to CSS variables
@@ -924,17 +370,15 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
           speedValue.toString(),
         );
       }
-    }, [animationSpeed, containerRef.current]);
+    }, [animationSpeed]);
 
-    // Sticky headers: translate timeline headers and task-list header on vertical scroll
+    // Sticky headers: translate timeline headers and task-list header on scroll
     useEffect(() => {
       const scrollContainer = scrollContainerRef.current;
       if (!scrollContainer) return;
 
       const handleScroll = () => {
         const scrollTop = scrollContainer.scrollTop;
-
-        // Translate timeline headers
         const higherHeaders = scrollContainer.querySelectorAll<HTMLElement>(
           ".rmg-timeline-header-higher",
         );
@@ -951,19 +395,12 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         higherHeaders.forEach((el) => {
           el.style.transform = `translateY(${scrollTop}px)`;
         });
-
-        const higherHeaderHeight =
-          higherHeaders.length > 0 ? higherHeaders[0].offsetHeight : 0;
-
         mainHeaders.forEach((el) => {
           el.style.transform = `translateY(${scrollTop}px)`;
         });
-
         if (taskListHeader) {
           taskListHeader.style.transform = `translateY(${scrollTop}px)`;
         }
-
-        // Make today marker label sticky (stays at top)
         if (todayMarkerLabel) {
           todayMarkerLabel.style.transform = `translate(-50%, ${scrollTop}px)`;
         }
@@ -973,10 +410,9 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         passive: true,
       });
       return () => scrollContainer.removeEventListener("scroll", handleScroll);
-    }, [scrollContainerRef.current]);
+    }, []);
 
-    // Infinite scroll: proactively extend the timeline BEFORE the user hits the
-    // edge, so new area is already rendered and scrolling never stalls.
+    // Infinite scroll: proactively extend the timeline before reaching an edge.
     useEffect(() => {
       const container = scrollContainerRef.current;
       if (!container || !infiniteScroll || !onTimelineExtend) return;
@@ -990,8 +426,6 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         const maxScroll = container.scrollWidth - container.clientWidth;
         if (maxScroll <= 0) return;
 
-        // Start generating once the viewport gets within ~0.75 screens of an
-        // edge. Generous enough that the new units exist before they're needed.
         const threshold = Math.max(200, container.clientWidth * 0.75);
 
         if (container.scrollLeft >= maxScroll - threshold) {
@@ -1006,8 +440,6 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
           handleTimelineExtension("left");
         }
 
-        // Safety: if the parent ignores/clamps the extension (no size change),
-        // release the guard so future scrolls can retry.
         if (isExtendingRef.current) {
           window.setTimeout(() => {
             isExtendingRef.current = false;
@@ -1029,9 +461,8 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [infiniteScroll, onTimelineExtend]);
 
-    // After a left extension the timeline grows on the left, shifting every
-    // task right. Compensate the scroll position so the viewport stays put and
-    // tasks don't visibly jump. Runs synchronously before paint.
+    // After a left extension the timeline grows on the left; compensate the
+    // scroll position so the viewport stays put. Runs before paint.
     useLayoutEffect(() => {
       const container = scrollContainerRef.current;
       if (!container) return;
@@ -1040,20 +471,15 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         const { prevScrollWidth, prevScrollLeft } =
           pendingLeftExtendRef.current;
         const delta = container.scrollWidth - prevScrollWidth;
-        if (delta !== 0) {
-          container.scrollLeft = prevScrollLeft + delta;
-        }
+        if (delta !== 0) container.scrollLeft = prevScrollLeft + delta;
         pendingLeftExtendRef.current = null;
       }
 
-      // The new units have rendered — allow the next extension.
       isExtendingRef.current = false;
     }, [totalUnits]);
 
     // Resolve the effective extra dependency links to pass to DependencyLinks.
-    // "auto" chains each group's tasks chronologically (by startDate).
-    // An explicit array is passed through as-is.
-    const resolvedExtraLinks: DependencyLink[] = (() => {
+    const resolvedExtraLinks: DependencyLink[] = useMemo(() => {
       if (!dependencyLinks) return [];
       if (dependencyLinks === "auto") {
         const links: DependencyLink[] = [];
@@ -1071,24 +497,30 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
         return links;
       }
       return dependencyLinks;
-    })();
+    }, [dependencyLinks, tasks]);
 
-    const style: React.CSSProperties = {
-      fontSize: fontSize || "inherit",
-    };
+    // Total grid height (used by the today marker), computed once per render.
+    const totalGridHeight = useMemo(
+      () =>
+        tasks.reduce((total, group) => {
+          if (!group || !Array.isArray(group.tasks)) return total + 60;
+          const taskRows = CollisionService.detectOverlaps(
+            group.tasks,
+            activeViewMode,
+          );
+          return total + Math.max(60, taskRows.length * 40 + 20);
+        }, 0),
+      [tasks, activeViewMode],
+    );
 
-    // Apply dark mode class if enabled
+    const style: React.CSSProperties = { fontSize: fontSize || "inherit" };
     const themeClass = darkMode ? "rmg-dark" : "";
 
-    // Merge custom styles with component class names
-    const getComponentClassName = (component: string, defaultClass: string) => {
-      return `${defaultClass} ${styles[component as keyof typeof styles] || ""}`;
-    };
+    const getComponentClassName = (component: string, defaultClass: string) =>
+      `${defaultClass} ${styles[component as keyof typeof styles] || ""}`;
 
-    // Determine if we should show the view mode selector
     const shouldShowViewModeSelector = getAvailableViewModes() !== false;
 
-    // Custom render function for the header
     const renderHeaderContent = () => {
       if (renderHeader) {
         return renderHeader({
@@ -1131,12 +563,11 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       );
     };
 
-    // Custom render function for the timeline header
     const renderTimelineHeaderContent = () => {
       if (renderTimelineHeader) {
         return renderTimelineHeader({
           timeUnits,
-          currentUnitIndex: currentUnitIndex,
+          currentUnitIndex,
           viewMode: activeViewMode,
           locale,
           unitWidth: viewUnitWidth,
@@ -1223,16 +654,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                 {showCurrentDateMarker && currentUnitIndex >= 0 && (
                   <TodayMarker
                     currentMonthIndex={currentUnitIndex}
-                    // Calculate height based on actual row heights including collisions
-                    height={tasks.reduce((total, group) => {
-                      if (!group || !Array.isArray(group.tasks))
-                        return total + 60;
-                      const taskRows = CollisionService.detectOverlaps(
-                        group.tasks,
-                        activeViewMode,
-                      );
-                      return total + Math.max(60, taskRows.length * 40 + 20);
-                    }, 0)}
+                    height={totalGridHeight}
                     label={todayLabel}
                     dayOfMonth={currentDate.getDate()}
                     className={getComponentClassName(
@@ -1249,7 +671,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
 
                   return (
                     <TaskRow
-                      key={`task-row-${group.id}-${forceRender}`}
+                      key={`task-row-${group.id}`}
                       taskGroup={group}
                       startDate={derivedStartDate}
                       endDate={derivedEndDate}
@@ -1273,6 +695,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                         "rmg-tooltip",
                       )}
                       viewMode={activeViewMode}
+                      minuteStep={minuteStep}
                       scrollContainerRef={scrollContainerRef}
                       smoothDragging={smoothDragging}
                       movementThreshold={movementThreshold}
@@ -1288,7 +711,6 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
 
                 {showDependencyLinks && (
                   <DependencyLinks
-                    key={`dep-links-${forceRender}`}
                     tasks={tasks}
                     startDate={derivedStartDate}
                     endDate={derivedEndDate}

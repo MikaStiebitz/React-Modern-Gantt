@@ -1,6 +1,5 @@
 import React from "react";
 import { ViewMode, TooltipRenderProps } from "@/types";
-import { TaskService } from "@/services";
 import { TooltipProps } from "@/types";
 import { format } from "date-fns";
 import { getDuration } from "@/utils/dateUtils";
@@ -27,32 +26,10 @@ const Tooltip: React.FC<
   viewMode = ViewMode.MONTH,
   renderTooltip,
 }) => {
-  // Default values
-  let displayStartDate = task.startDate;
-  let displayEndDate = task.endDate;
-
-  try {
-    // If the task is being dragged/resized, get the live dates from element position
-    const id = taskId || task.id;
-    const taskEl = document.querySelector(
-      `[data-task-id="${id}"][data-instance-id="${instanceId}"]`,
-    ) as HTMLElement;
-
-    if (taskEl && (dragType || taskEl.style.left || taskEl.style.width)) {
-      const dates = TaskService.getLiveDatesFromElement(
-        taskEl,
-        startDate,
-        endDate,
-        totalMonths,
-        monthWidth,
-        viewMode,
-      );
-      displayStartDate = dates.startDate;
-      displayEndDate = dates.endDate;
-    }
-  } catch (error) {
-    console.error("Error calculating live dates for tooltip:", error);
-  }
+  // The task passed in already carries live (preview) dates during a drag, so
+  // we read them directly — no fragile DOM querying needed.
+  const displayStartDate = task.startDate;
+  const displayEndDate = task.endDate;
 
   // Calculate duration based on view mode
   const duration = getDuration(displayStartDate, displayEndDate, viewMode);

@@ -29,6 +29,12 @@ export default defineConfig({
                 find: "@",
                 replacement: resolve(__dirname, "../src"),
             },
+            // Resolve date-fns from demo/node_modules so Vercel finds it
+            // when processing library source files in ../src/
+            {
+                find: "date-fns",
+                replacement: resolve(__dirname, "node_modules/date-fns"),
+            },
         ],
     },
     optimizeDeps: {

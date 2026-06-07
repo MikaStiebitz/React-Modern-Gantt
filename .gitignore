@@ -2,7 +2,8 @@
 
 # dependencies
 /node_modules
-/example/node_modules
+/demo/node_modules
+/demo/dist
 /.pnp
 .pnp.js
 .yarn/install-state.gz

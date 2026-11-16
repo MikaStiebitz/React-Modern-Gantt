@@ -147,3 +147,35 @@ describe('CollisionService', () => {
     });
   });
 });
+
+describe('CollisionService stackTasks', () => {
+  const tasks: Task[] = [
+    { id: 'b', name: 'B', startDate: new Date(2023, 0, 16), endDate: new Date(2023, 0, 31) },
+    { id: 'a', name: 'A', startDate: new Date(2023, 0, 1), endDate: new Date(2023, 0, 15) },
+    { id: 'c', name: 'C', startDate: new Date(2023, 0, 5), endDate: new Date(2023, 0, 20) },
+  ];
+
+  test('puts every task on its own row, keeping the provided order', () => {
+    const rows = CollisionService.detectOverlaps(tasks, ViewMode.MONTH, true);
+
+    expect(rows.map((row) => row.map((t) => t.id))).toEqual([['b'], ['a'], ['c']]);
+  });
+
+  test('packs non-overlapping tasks together by default', () => {
+    const rows = CollisionService.detectOverlaps(tasks, ViewMode.MONTH);
+
+    expect(rows.length).toBeLessThan(tasks.length);
+  });
+
+  test('returns no rows for an empty list', () => {
+    expect(CollisionService.detectOverlaps([], ViewMode.MONTH, true)).toEqual([]);
+  });
+
+  test('preview arrangement keeps one task per row', () => {
+    const moved = { ...tasks[0], startDate: new Date(2023, 0, 2), endDate: new Date(2023, 0, 3) };
+    const rows = CollisionService.getPreviewArrangement(moved, tasks, ViewMode.MONTH, true);
+
+    expect(rows.map((row) => row.map((t) => t.id))).toEqual([['b'], ['a'], ['c']]);
+    expect(rows[0][0].startDate).toEqual(moved.startDate);
+  });
+});

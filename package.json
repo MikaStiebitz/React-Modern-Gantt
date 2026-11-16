@@ -2,7 +2,7 @@
     "name": "react-modern-gantt",
     "version": "0.9.0",
     "description": "A modern, customizable Gantt chart component for React applications with export functionality",
-    "main": "dist/index.js",
+    "main": "dist/index.cjs",
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts",
     "type": "module",
@@ -55,51 +55,62 @@
     },
     "optionalDependencies": {
         "html2canvas": "^1.4.1",
-        "jspdf": "^4.1.0"
+        "jspdf": "^4.2.1"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.4",
-        "@rollup/plugin-commonjs": "^29.0.2",
-        "@rollup/plugin-node-resolve": "^16.0.1",
-        "@rollup/plugin-terser": "^1.0.0",
-        "@rollup/plugin-typescript": "^12.1.4",
-        "@rollup/pluginutils": "^5.3.0",
-        "@testing-library/jest-dom": "^6.9.1",
-        "@testing-library/react": "^16.3.0",
-        "@testing-library/user-event": "^14.6.1",
+        "@eslint/js": "^9.39.5",
+        "@rollup/plugin-commonjs": "^29.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^1.0.2",
+        "@rollup/plugin-typescript": "^12.3.1",
+        "@rollup/pluginutils": "^5.5.1",
+        "@testing-library/jest-dom": "^7.0.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.12",
         "@types/jest": "^30.0.0",
-        "@types/react": "^19.2.0",
-        "@types/react-dom": "^19.2.0",
-        "@typescript-eslint/eslint-plugin": "^8.57.2",
-        "@typescript-eslint/parser": "^8.57.2",
-        "autoprefixer": "^10.4.21",
-        "baseline-browser-mapping": "^2.10.10",
-        "eslint": "^9.39.4",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@typescript-eslint/eslint-plugin": "^8.72.2",
+        "@typescript-eslint/parser": "^8.72.2",
+        "autoprefixer": "^10.6.2",
+        "baseline-browser-mapping": "^2.11.37",
+        "eslint": "^9.39.5",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-prettier": "^5.5.7",
         "eslint-plugin-react": "^7.37.5",
-        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-hooks": "^7.1.1",
         "identity-obj-proxy": "^3.0.0",
-        "jest": "^30.3.0",
-        "jest-environment-jsdom": "^30.3.0",
-        "minimatch": "^9.0.9",
-        "postcss": "^8.5.6",
-        "prettier": "^3.6.2",
-        "rollup": "^4.60.0",
+        "jest": "^30.5.2",
+        "jest-environment-jsdom": "^30.5.2",
+        "minimatch": "^11.0.8",
+        "postcss": "^8.5.33",
+        "prettier": "^3.10.1",
+        "rollup": "^4.68.4",
+        "rollup-plugin-dts": "^6.5.1",
         "rollup-plugin-peer-deps-external": "^2.2.4",
         "rollup-plugin-postcss": "^4.0.2",
-        "ts-jest": "^29.4.4",
+        "ts-jest": "^29.4.15",
         "ts-node": "^10.9.2",
-        "tslib": "^2.8.1",
-        "typescript": "^6.0.0"
+        "tslib": "^2.9.1",
+        "typescript": "^6.0.3"
     },
     "dependencies": {
-        "date-fns": "^4.1.0"
+        "date-fns": "^4.4.0"
     },
     "overrides": {
         "@testing-library/react": {
             "react": "^19.0.0",
             "react-dom": "^19.0.0"
+        },
+        "glob": {
+            ".": "^14.0.6",
+            "minimatch": "^11.0.8"
+        },
+        "test-exclude": {
+            "minimatch": "^11.0.8"
+        },
+        "@typescript-eslint/typescript-estree": {
+            "minimatch": "^11.0.8"
         }
     },
     "sideEffects": [
@@ -108,11 +119,17 @@
     ],
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.esm.js",
-            "require": "./dist/index.js"
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.esm.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
         },
-        "./dist/index.css": "./dist/index.css"
+        "./dist/index.css": "./dist/index.css",
+        "./package.json": "./package.json"
     },
     "typesVersions": {
         "*": {

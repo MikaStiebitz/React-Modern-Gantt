@@ -5,23 +5,24 @@ import postcss from "rollup-plugin-postcss";
 import terser from "@rollup/plugin-terser";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import autoprefixer from "autoprefixer";
+import dts from "rollup-plugin-dts";
 import { createFilter } from "@rollup/pluginutils";
 import { readFileSync } from "fs";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 
-export default {
+const jsConfig = {
     input: "src/index.ts",
     output: [
         {
-            file: pkg.main,
+            file: pkg.exports["."].require.default,
             format: "cjs",
             exports: "named",
             sourcemap: true,
             inlineDynamicImports: true,
         },
         {
-            file: pkg.module,
+            file: pkg.exports["."].import.default,
             format: "esm",
             exports: "named",
             sourcemap: true,
@@ -53,10 +54,12 @@ export default {
         typescript({
             tsconfig: "./tsconfig.json",
             exclude: ["**/__tests__/**", "**/examples/**", "**/example/**"],
+            // Declarations are produced separately as a single bundled file (see dtsConfig below)
+            // so that the published .d.ts has no extensionless relative imports or "@/" aliases.
             compilerOptions: {
                 rootDir: "./src",
-                declaration: true,
-                declarationDir: "dist",
+                declaration: false,
+                declarationDir: undefined,
             },
         }),
         postcss({
@@ -78,3 +81,29 @@ export default {
     ],
     external: ["react", "react-dom", "date-fns", "html2canvas", "jspdf"],
 };
+
+// Bundle all type declarations into one self-contained file. Unbundled declarations keep
+// extensionless relative specifiers (./components/core) and path aliases (@/types), which
+// TypeScript cannot resolve under moduleResolution "node16"/"nodenext".
+const dtsConfig = {
+    input: "src/index.ts",
+    output: [
+        // ESM-flavoured declarations (package.json has "type": "module")
+        { file: pkg.exports["."].import.types, format: "es" },
+        // CJS-flavoured declarations for `require()` consumers
+        { file: pkg.exports["."].require.types, format: "es" },
+    ],
+    plugins: [
+        // CSS is handled by the JS build; it has no types.
+        {
+            name: "ignore-css",
+            resolveId(source) {
+                return source.endsWith(".css") ? { id: source, external: true } : null;
+            },
+        },
+        dts({ tsconfig: "./tsconfig.json" }),
+    ],
+    external: ["react", "react-dom", "date-fns", "html2canvas", "jspdf", /\.css$/],
+};
+
+export default [jsConfig, dtsConfig];

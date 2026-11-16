@@ -16,6 +16,9 @@ export default defineConfig({
         open: true,
     },
     resolve: {
+        // The library source in ../src imports react; resolve it from demo/node_modules
+        // (Vercel only installs the demo's dependencies).
+        dedupe: ["react", "react-dom"],
         alias: [
             {
                 find: "react-modern-gantt/dist/index.css",

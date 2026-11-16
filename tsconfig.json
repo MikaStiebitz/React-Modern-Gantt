@@ -16,9 +16,10 @@
         "declarationDir": "dist",
         "sourceMap": true,
         "outDir": "dist",
-        "baseUrl": ".",
+        "rootDir": ".",
+        "types": ["jest", "@testing-library/jest-dom"],
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["./src/*"]
         }
     },
     "include": ["src/**/*"],

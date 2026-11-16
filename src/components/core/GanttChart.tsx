@@ -89,6 +89,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
       // Visual customization
       fontSize,
       rowHeight = 40,
+      stackTasks = false,
       timeStep,
       maxHeight,
     },
@@ -1201,6 +1202,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
               onGroupClick={onGroupClick}
               className={getComponentClassName("taskList", "rmg-task-list")}
               viewMode={activeViewMode}
+              stackTasks={stackTasks}
               showTimelineHeader={showTimelineHeader}
             />
           )}
@@ -1230,6 +1232,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                       const taskRows = CollisionService.detectOverlaps(
                         group.tasks,
                         activeViewMode,
+                        stackTasks,
                       );
                       return total + Math.max(60, taskRows.length * 40 + 20);
                     }, 0)}
@@ -1273,6 +1276,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                         "rmg-tooltip",
                       )}
                       viewMode={activeViewMode}
+                      stackTasks={stackTasks}
                       scrollContainerRef={scrollContainerRef}
                       smoothDragging={smoothDragging}
                       movementThreshold={movementThreshold}
@@ -1295,6 +1299,7 @@ const GanttChart = forwardRef<GanttChartRef, GanttChartProps>(
                     totalUnits={totalUnits}
                     unitWidth={viewUnitWidth}
                     viewMode={activeViewMode}
+                    stackTasks={stackTasks}
                     extraLinks={resolvedExtraLinks}
                   />
                 )}

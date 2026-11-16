@@ -140,6 +140,12 @@ export interface GanttChartProps {
   // Visual customization
   fontSize?: string;
   rowHeight?: number;
+  /**
+   * Place every task on its own row inside its group instead of packing
+   * non-overlapping tasks onto shared rows. Rows follow the order of `group.tasks`.
+   * Default: false
+   */
+  stackTasks?: boolean;
   timeStep?: number;
   unitWidth?: number;
   maxHeight?: string | number; // Max height for the chart body (enables vertical scrolling with sticky headers)
@@ -165,6 +171,8 @@ export interface TaskRowProps {
   onTaskSelect?: (task: Task, isSelected: boolean) => void;
   onAutoScrollChange?: (isScrolling: boolean) => void;
   viewMode?: ViewMode;
+  /** Place every task on its own row instead of packing non-overlapping tasks together */
+  stackTasks?: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 
   // NEW: Infinite scroll support
@@ -191,6 +199,8 @@ export interface TaskListProps {
   className?: string;
   onGroupClick?: (group: TaskGroup) => void;
   viewMode?: ViewMode;
+  /** Must match the GanttChart `stackTasks` setting so group heights line up */
+  stackTasks?: boolean;
   showTimelineHeader?: boolean; // Pass through for styling adjustments
 }
 

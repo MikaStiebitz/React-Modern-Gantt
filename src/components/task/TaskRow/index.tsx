@@ -25,6 +25,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onTaskSelect,
   onAutoScrollChange,
   viewMode = ViewMode.MONTH,
+  stackTasks = false,
   scrollContainerRef,
   smoothDragging = true,
   movementThreshold = 3,
@@ -129,8 +130,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
         previewTask,
         taskGroup.tasks,
         viewMode,
+        stackTasks,
       )
-    : CollisionService.detectOverlaps(taskGroup.tasks, viewMode);
+    : CollisionService.detectOverlaps(taskGroup.tasks, viewMode, stackTasks);
 
   // Calculate row height based on task arrangement
   const rowHeight = Math.max(60, taskRows.length * 40 + 20);

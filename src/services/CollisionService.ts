@@ -8,13 +8,21 @@ export class CollisionService {
   /**
    * Detects overlapping tasks and organizes them into rows
    * Using precise visual overlap detection
+   *
+   * @param stackTasks When true, collision packing is skipped and every task gets
+   *                   its own row (in the order the tasks were provided).
    */
   public static detectOverlaps(
     tasks: Task[],
     viewMode: ViewMode = ViewMode.MONTH,
+    stackTasks: boolean = false,
   ): Task[][] {
     if (!Array.isArray(tasks) || tasks.length === 0) {
       return [];
+    }
+
+    if (stackTasks) {
+      return tasks.map((task) => [task]);
     }
 
     // Sort tasks by start date to optimize row placement
@@ -147,12 +155,13 @@ export class CollisionService {
     updatedTask: Task,
     allTasks: Task[],
     viewMode: ViewMode = ViewMode.MONTH,
+    stackTasks: boolean = false,
   ): Task[][] {
     // Create updated tasks array
     const updatedTasks = allTasks.map((task) =>
       task.id === updatedTask.id ? updatedTask : task,
     );
 
-    return this.detectOverlaps(updatedTasks, viewMode);
+    return this.detectOverlaps(updatedTasks, viewMode, stackTasks);
   }
 }

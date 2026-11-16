@@ -16,6 +16,8 @@ export interface DependencyLinksProps {
   totalUnits: number;
   unitWidth: number;
   viewMode: ViewMode;
+  /** Place every task on its own row (must match the GanttChart `stackTasks` setting) */
+  stackTasks?: boolean;
   /** Additional links to render on top of any task.dependencies[] already set. */
   extraLinks?: DependencyLink[];
 }
@@ -140,6 +142,7 @@ const DependencyLinks: React.FC<DependencyLinksProps> = ({
   totalUnits,
   unitWidth,
   viewMode,
+  stackTasks = false,
   extraLinks = [],
 }) => {
   const links = useMemo(() => {
@@ -155,7 +158,7 @@ const DependencyLinks: React.FC<DependencyLinksProps> = ({
 
       const taskRows =
         group.tasks.length > 0
-          ? CollisionService.detectOverlaps(group.tasks, viewMode)
+          ? CollisionService.detectOverlaps(group.tasks, viewMode, stackTasks)
           : [];
       const rowHeight = Math.max(60, taskRows.length * 40 + 20);
 
@@ -231,7 +234,16 @@ const DependencyLinks: React.FC<DependencyLinksProps> = ({
     });
 
     return arrows;
-  }, [tasks, startDate, endDate, totalUnits, unitWidth, viewMode, extraLinks]);
+  }, [
+    tasks,
+    startDate,
+    endDate,
+    totalUnits,
+    unitWidth,
+    viewMode,
+    stackTasks,
+    extraLinks,
+  ]);
 
   if (links.length === 0) return null;
 

@@ -27,6 +27,7 @@ A flexible, customizable Gantt chart component for React applications with drag-
 - [Task & TaskGroup Data Structure](#-task--taskgroup-data-structure)
 - [View Modes](#-view-modes)
 - [Interactive Progress Editing](#-interactive-progress-editing)
+- [Task Layout: One Task per Row](#-task-layout-one-task-per-row)
 - [Export Functionality](#-export-functionality)
 - [Infinite Scroll](#-infinite-scroll)
 - [Performance Optimization](#-performance-optimization)
@@ -516,6 +517,18 @@ function App() {
 - **Update state** in `onTimelineExtend` to persist the new timeline range
 - Consider **debouncing** if loading data to prevent excessive API calls
 - **Cache** previously loaded data to avoid re-fetching
+
+## 🧱 Task Layout: One Task per Row
+
+By default, tasks inside a group are packed onto shared rows: tasks that don't overlap in time sit on the same row, and overlapping tasks are pushed onto extra rows.
+
+Set `stackTasks` to give **every task its own row** while keeping the tasks grouped under their group header:
+
+```jsx
+<GanttChart tasks={tasks} stackTasks />
+```
+
+Rows follow the order of `group.tasks`, so a task keeps its row while it is dragged or resized. Dependency links and the group heights adapt automatically.
 
 ## 🎯 Focus Mode
 

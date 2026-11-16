@@ -15,6 +15,7 @@ const TaskList: React.FC<TaskListProps> = ({
   className = "",
   onGroupClick,
   viewMode,
+  stackTasks = false,
   showTimelineHeader = true,
 }) => {
   // Validate task groups array
@@ -26,7 +27,11 @@ const TaskList: React.FC<TaskListProps> = ({
       return 60; // Default height for empty groups
     }
 
-    const taskRows = CollisionService.detectOverlaps(taskGroup.tasks, viewMode);
+    const taskRows = CollisionService.detectOverlaps(
+      taskGroup.tasks,
+      viewMode,
+      stackTasks,
+    );
     return Math.max(60, taskRows.length * rowHeight + 20);
   };
 
